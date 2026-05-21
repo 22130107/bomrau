@@ -13,7 +13,7 @@ interface CategoryCardProps {
 export function CategoryCard({ image, alt, title, price, sold, remaining, href }: CategoryCardProps) {
   return (
     <li className="list-none w-[calc(50%-8px)] md:w-[calc(33.333%-22px)]">
-      <div className="md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px] md:h-full">
+      <div className="h-full md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px]">
         <article className="flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal p-2 md:p-4 pb-2.5 md:pb-6 border border-[rgb(253,230,138)] md:border-none">
           <figure className="relative w-full aspect-[16/9]">
             <img alt={alt} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" />

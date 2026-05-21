@@ -17,7 +17,7 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
 
   return (
     <li className="list-none w-[calc(50%-8px)] md:w-[calc(33.333%-22px)]">
-      <div className="md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px] md:h-full">
+      <div className="h-full md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px]">
         <article className="flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal p-2 md:p-4 pb-2.5 md:pb-6 border border-[rgb(253,230,138)] md:border-none">
           <div className="font-medium text-[rgb(251,191,36)] text-[14px] md:text-[24px] leading-tight md:leading-[38.4px] font-[family-name:var(--font-nunito)]">
             {name}
