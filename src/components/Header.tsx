@@ -45,17 +45,19 @@ export function Header({ isLoggedIn, username }: HeaderProps) {
           <nav className="flex flex-col gap-4">
             <Link 
               href="/thong-bao" 
-              className="text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]"
+              className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]"
               onClick={() => setIsOpen(false)}
             >
-              Thông Báo
+              <i className="fa-solid fa-bell"></i>
+              <span>Thông Báo</span>
             </Link>
             <Link 
               href="/shopping" 
-              className="text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]"
+              className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]"
               onClick={() => setIsOpen(false)}
             >
-              Shopping
+              <i className="fa-solid fa-cart-arrow-down"></i>
+              <span>Shopping</span>
             </Link>
             <div className="pt-2">
               {isLoggedIn ? (
