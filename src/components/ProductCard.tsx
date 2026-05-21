@@ -17,39 +17,41 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
 
   return (
     <li className="list-none w-[calc(50%-8px)] md:w-[calc(33.333%-22px)]">
-      <article className="border flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:rounded-br-[1.25rem] border-[rgb(253,230,138)] md:rounded-tl-[1.25rem] p-2 md:p-4 pb-2.5 md:pb-6">
-        <div className="font-medium text-[rgb(251,191,36)] text-[14px] md:text-[24px] leading-tight md:leading-[38.4px] font-[family-name:var(--font-nunito)]">
-          {name}
-        </div>
-        <figure className="relative w-full mt-2 md:mt-3 aspect-[16/9]">
-          <DiscountBadge discount={discount} />
-          <img src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl md:rounded-none md:rounded-tl-2xl md:rounded-br-2xl md:rounded-tr-none md:rounded-bl-none" alt={name} />
-        </figure>
-        <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
-          <div className="border-t text-center mt-2 pt-2 md:mt-3 md:pt-3 border-dashed border-t-[rgba(251,191,36,0.4)]">
-            <span className="font-bold text-[rgb(251,191,36)] text-[13px] md:text-[20px] pr-1.5 md:pr-2 font-[family-name:var(--font-nunito)]">
-              {formatPrice(price)}
-            </span>
-            <span className="font-medium line-through text-[rgba(238,238,238,0.6)] text-[10px] md:text-[14px] font-[family-name:var(--font-nunito)]">
-              {formatPrice(originalPrice)}
-            </span>
+      <div className="md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px] md:h-full">
+        <article className="flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal p-2 md:p-4 pb-2.5 md:pb-6 border border-[rgb(253,230,138)] md:border-none">
+          <div className="font-medium text-[rgb(251,191,36)] text-[14px] md:text-[24px] leading-tight md:leading-[38.4px] font-[family-name:var(--font-nunito)]">
+            {name}
           </div>
-          {(sold !== undefined || remaining !== undefined) && (
-            <p className="text-center text-[10px] md:text-[14px] mt-1 md:mt-2 flex flex-col md:flex-row md:justify-center md:items-center gap-0.5 md:gap-0">
-              {sold !== undefined && (
-                <span className="block md:inline">Đã bán <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{sold}</span> acc</span>
-              )}
-              {sold !== undefined && remaining !== undefined && <span className="hidden md:inline mx-1">|</span>}
-              {remaining !== undefined && (
-                <span className="block md:inline">Còn <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{remaining}</span> acc</span>
-              )}
-            </p>
-          )}
-        </div>
-        <Link href={`/shopping/${id}`} className="items-center flex font-bold justify-center mx-auto mt-auto max-w-full w-full md:w-[200px] h-8 md:h-10 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] rounded-lg md:rounded-none md:rounded-br-xl md:rounded-tl-xl text-[12px] md:text-[18px] transition-colors text-black">
-          CHI TIẾT
-        </Link>
-      </article>
+          <figure className="relative w-full mt-2 md:mt-3 aspect-[16/9]">
+            <DiscountBadge discount={discount} />
+            <img src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" alt={name} />
+          </figure>
+          <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
+            <div className="border-t text-center mt-2 pt-2 md:mt-3 md:pt-3 border-dashed border-t-[rgba(251,191,36,0.4)]">
+              <span className="font-bold text-[rgb(251,191,36)] text-[13px] md:text-[20px] pr-1.5 md:pr-2 font-[family-name:var(--font-nunito)]">
+                {formatPrice(price)}
+              </span>
+              <span className="font-medium line-through text-[rgba(238,238,238,0.6)] text-[10px] md:text-[14px] font-[family-name:var(--font-nunito)]">
+                {formatPrice(originalPrice)}
+              </span>
+            </div>
+            {(sold !== undefined || remaining !== undefined) && (
+              <p className="text-center text-[10px] md:text-[14px] mt-1 md:mt-2 flex flex-col md:flex-row md:justify-center md:items-center gap-0.5 md:gap-0">
+                {sold !== undefined && (
+                  <span className="block md:inline">Đã bán <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{sold}</span> acc</span>
+                )}
+                {sold !== undefined && remaining !== undefined && <span className="hidden md:inline mx-1">|</span>}
+                {remaining !== undefined && (
+                  <span className="block md:inline">Còn <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{remaining}</span> acc</span>
+                )}
+              </p>
+            )}
+          </div>
+          <Link href={`/shopping/${id}`} className="items-center flex font-bold justify-center mx-auto mt-auto max-w-full w-full md:w-[200px] h-8 md:h-10 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] rounded-lg md:rounded-none md:clip-button text-[12px] md:text-[18px] transition-colors text-black">
+            CHI TIẾT
+          </Link>
+        </article>
+      </div>
     </li>
   );
 }

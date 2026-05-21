@@ -19,18 +19,19 @@ export function ProductDetail({ name, image, price, originalPrice, discount, pet
 
   return (
     <div className="w-full max-w-[1200px] mx-auto px-[14px] animate-fade-in-up">
-      <article className="items-start md:items-center flex flex-col md:flex-row size-full relative bg-[rgb(2,6,23)] rounded-br-[1.25rem] border-[rgb(253,230,138)] rounded-tl-[1.25rem] border gap-[16px] md:gap-[24px] pt-12 md:pt-4 pr-4 pb-6 pl-4">
-        <div className="font-medium absolute left-4 top-4 text-[rgb(251,191,36)] text-[20px] md:text-[24px] font-[family-name:var(--font-nunito)]">
-          {name}
-        </div>
-        <figure className="relative w-full md:w-[50%] mt-[12px] aspect-[16/9]">
-          <div className="items-center flex font-bold justify-center absolute w-[50px] md:w-[60px] h-[50px] md:h-[60px] top-0 right-0 text-white text-[18px] md:text-[22px] p-1 z-[2] animate-blink-badge font-[family-name:var(--font-nunito)]">
-            <span className="block text-[rgb(254,239,199)]">-{discount}</span>
-            <span className="block absolute left-0 top-0 right-0 bottom-0 z-[-1] before:absolute before:left-0 before:top-0 before:right-0 before:bottom-0 before:bg-[rgb(220,38,38)] before:content-[''] before:z-[-1] before:rounded-xs after:absolute after:left-0 after:top-0 after:right-0 after:bottom-0 after:bg-[rgb(220,38,38)] after:content-[''] after:rotate-45 after:z-[-1] after:rounded-xs animate-blink-badge"></span>
-            <span className="block text-[rgb(254,239,199)] text-[14px]">%</span>
+      <div className="md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px] md:h-full">
+        <article className="items-start md:items-center flex flex-col md:flex-row size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal gap-[16px] md:gap-[24px] pt-12 md:pt-4 pr-4 pb-6 pl-4 border border-[rgb(253,230,138)] md:border-none">
+          <div className="font-medium absolute left-4 top-4 text-[rgb(251,191,36)] text-[20px] md:text-[24px] font-[family-name:var(--font-nunito)]">
+            {name}
           </div>
-          <img alt={name} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none" />
-        </figure>
+          <figure className="relative w-full md:w-[50%] mt-[12px] aspect-[16/9]">
+            <div className="items-center flex font-bold justify-center absolute w-[50px] md:w-[60px] h-[50px] md:h-[60px] top-0 right-0 text-white text-[18px] md:text-[22px] p-1 z-[2] animate-blink-badge font-[family-name:var(--font-nunito)]">
+              <span className="block text-[rgb(254,239,199)]">-{discount}</span>
+              <span className="block absolute left-0 top-0 right-0 bottom-0 z-[-1] before:absolute before:left-0 before:top-0 before:right-0 before:bottom-0 before:bg-[rgb(220,38,38)] before:content-[''] before:z-[-1] before:rounded-xs after:absolute after:left-0 after:top-0 after:right-0 after:bottom-0 after:bg-[rgb(220,38,38)] after:content-[''] after:rotate-45 after:z-[-1] after:rounded-xs animate-blink-badge"></span>
+              <span className="block text-[rgb(254,239,199)] text-[14px]">%</span>
+            </div>
+            <img alt={name} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" />
+          </figure>
         <div className="flex flex-col grow text-center w-full md:w-[calc(50%-24px)] pt-4 pb-4">
           <button onClick={() => setShowQR(true)} className="items-center flex font-bold justify-center text-center mx-auto w-[180px] md:w-[200px] h-[50px] md:h-[60px] mt-[16px] border-[rgb(251,191,36)] border rounded-lg text-[rgb(251,191,36)] text-[16px] md:text-[18px] hover:bg-[rgb(251,191,36)] hover:text-black transition-colors cursor-pointer">
             MUA NGAY
@@ -71,6 +72,7 @@ export function ProductDetail({ name, image, price, originalPrice, discount, pet
           </div>
         </div>
       </article>
+    </div>
 
       {/* Modal QR chuyển khoản */}
       {showQR && (

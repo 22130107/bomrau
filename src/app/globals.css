@@ -54,3 +54,13 @@
 body {
   background-image: radial-gradient(rgb(17, 24, 39), rgb(31, 41, 55));
 }
+
+@utility clip-diagonal {
+  clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+}
+
+@utility clip-button {
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+
