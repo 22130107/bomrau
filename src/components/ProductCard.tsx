@@ -10,9 +10,10 @@ interface ProductCardProps {
   discount: number;
   sold?: number;
   remaining?: number;
+  href: string;
 }
 
-export function ProductCard({ id, name, image, price, originalPrice, discount, sold, remaining }: ProductCardProps) {
+export function ProductCard({ id, name, image, price, originalPrice, discount, sold, remaining, href }: ProductCardProps) {
   const formatPrice = (p: number) => p.toLocaleString("vi-VN") + " ₫";
 
   return (
@@ -24,7 +25,7 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
           </div>
           <figure className="relative w-full mt-2 md:mt-3 aspect-[16/9]">
             <DiscountBadge discount={discount} />
-            <img src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" alt={name} />
+            <img src={image} className="block size-full object-contain absolute left-0 top-0 right-0 bottom-0 rounded-2xl" alt={name} />
           </figure>
           <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
             <div className="border-t text-center mt-2 pt-2 md:mt-3 md:pt-3 border-dashed border-t-[rgba(251,191,36,0.4)]">
@@ -47,7 +48,7 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
               </p>
             )}
           </div>
-          <Link href={`/shopping/${id}`} className="items-center flex font-bold justify-center mx-auto mt-auto max-w-full w-full md:w-[200px] h-8 md:h-10 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] rounded-lg md:rounded-none md:clip-button text-[12px] md:text-[18px] transition-colors text-black">
+          <Link href={href} className="items-center flex font-bold justify-center mx-auto mt-auto max-w-full w-full md:w-[200px] h-8 md:h-10 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] rounded-lg md:rounded-none md:clip-button text-[12px] md:text-[18px] transition-colors text-black">
             CHI TIẾT
           </Link>
         </article>
