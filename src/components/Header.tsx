@@ -22,19 +22,21 @@ export function Header({ isLoggedIn, username }: HeaderProps) {
               <img alt="BomRauTFT Logo" src="https://storage.googleapis.com/download/storage/v1/b/prd-storytodesign.appspot.com/o/h2d-ext-asset%2F80db2b3de8cb58d0c798f786a4d8fa265af5886e.png?generation=1779094517541297&alt=media" className="block w-full" />
             </Link>
           </h1>
-          <SearchBar />
+          <div className="flex items-center gap-2 justify-end flex-1 md:contents">
+            <SearchBar />
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex flex-col justify-center items-center gap-[5px] w-8 h-8 md:hidden outline-none cursor-pointer shrink-0"
+              aria-label="Toggle menu"
+            >
+              <span className={`w-6 h-[2px] bg-[rgb(251,191,36)] rounded transition-all duration-300 ${isOpen ? "rotate-45 translate-y-[7px]" : ""}`}></span>
+              <span className={`w-6 h-[2px] bg-[rgb(251,191,36)] rounded transition-all duration-300 ${isOpen ? "opacity-0" : ""}`}></span>
+              <span className={`w-6 h-[2px] bg-[rgb(251,191,36)] rounded transition-all duration-300 ${isOpen ? "-rotate-45 -translate-y-[7px]" : ""}`}></span>
+            </button>
+          </div>
           <div className="hidden md:block">
             <Navigation isLoggedIn={isLoggedIn} username={username} />
           </div>
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex flex-col justify-center items-center gap-[5px] w-8 h-8 md:hidden outline-none cursor-pointer shrink-0"
-            aria-label="Toggle menu"
-          >
-            <span className={`w-6 h-[2px] bg-[rgb(251,191,36)] rounded transition-all duration-300 ${isOpen ? "rotate-45 translate-y-[7px]" : ""}`}></span>
-            <span className={`w-6 h-[2px] bg-[rgb(251,191,36)] rounded transition-all duration-300 ${isOpen ? "opacity-0" : ""}`}></span>
-            <span className={`w-6 h-[2px] bg-[rgb(251,191,36)] rounded transition-all duration-300 ${isOpen ? "-rotate-45 -translate-y-[7px]" : ""}`}></span>
-          </button>
         </div>
       </div>
 

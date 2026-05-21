@@ -2,7 +2,7 @@
 
 export function SearchBar() {
   return (
-    <div className="flex-1 max-w-[300px]">
+    <div className="w-[185px] md:w-auto md:flex-1 md:max-w-[300px]">
       <input
         type="text"
         placeholder="Nhập tên pet để tìm kiếm..."
