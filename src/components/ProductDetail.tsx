@@ -29,7 +29,7 @@ export function ProductDetail({ name, image, price, originalPrice, discount, pet
             <span className="block absolute left-0 top-0 right-0 bottom-0 z-[-1] before:absolute before:left-0 before:top-0 before:right-0 before:bottom-0 before:bg-[rgb(220,38,38)] before:content-[''] before:z-[-1] before:rounded-xs after:absolute after:left-0 after:top-0 after:right-0 after:bottom-0 after:bg-[rgb(220,38,38)] after:content-[''] after:rotate-45 after:z-[-1] after:rounded-xs animate-blink-badge"></span>
             <span className="block text-[rgb(254,239,199)] text-[14px]">%</span>
           </div>
-          <img alt={name} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" />
+          <img alt={name} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-tl-2xl rounded-br-2xl rounded-tr-none rounded-bl-none" />
         </figure>
         <div className="flex flex-col grow text-center w-full md:w-[calc(50%-24px)] pt-4 pb-4">
           <button onClick={() => setShowQR(true)} className="items-center flex font-bold justify-center text-center mx-auto w-[180px] md:w-[200px] h-[50px] md:h-[60px] mt-[16px] border-[rgb(251,191,36)] border rounded-lg text-[rgb(251,191,36)] text-[16px] md:text-[18px] hover:bg-[rgb(251,191,36)] hover:text-black transition-colors cursor-pointer">

@@ -13,11 +13,11 @@ interface CategoryCardProps {
 export function CategoryCard({ image, alt, title, price, sold, remaining, href }: CategoryCardProps) {
   return (
     <li className="list-none w-[calc(50%-8px)] md:w-[calc(33.333%-22px)]">
-      <article className="border flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-br-[1.25rem] border-[rgb(253,230,138)] rounded-tl-[1.25rem] p-3 pb-4 md:pt-4 md:pr-4 md:pb-6 md:pl-4">
+      <article className="border flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:rounded-br-[1.25rem] border-[rgb(253,230,138)] md:rounded-tl-[1.25rem] p-2 md:p-4 pb-2.5 md:pb-6">
         <figure className="relative w-full aspect-[16/9]">
-          <img alt={alt} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" />
+          <img alt={alt} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl md:rounded-none md:rounded-tl-2xl md:rounded-br-2xl md:rounded-tr-none md:rounded-bl-none" />
         </figure>
-        <div className="flex flex-col grow text-center pt-3 pb-3 md:pt-4 md:pb-4">
+        <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
           <h3 className="font-bold mb-auto text-center text-[rgb(251,191,36)] text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] min-h-10 md:min-h-16">{title}</h3>
           {price && <p className="font-bold text-center text-[12px] md:text-[16px]">{price}</p>}
           {(sold !== undefined || remaining !== undefined) && (
