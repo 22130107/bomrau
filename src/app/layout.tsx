@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "BomRauTFT - Shop Mua Bán Nick Game TFT Uy Tín, Giá Rẻ",
   description: "BomRauTFT là Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC. Mua bán tài khoản game TFT chất lượng cao.",
   keywords: "mua nick tft, shop tft, bomrautft, nick game tft, tài khoản tft giá rẻ",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
   openGraph: {
     title: "BomRauTFT - Shop Mua Bán Nick Game TFT",
     description: "Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC.",
