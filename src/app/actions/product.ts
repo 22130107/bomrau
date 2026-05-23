@@ -15,6 +15,10 @@ export interface ProductFormData {
   fake_sold_count: number;
   fake_remaining_count: number;
   status: "available" | "hidden";
+  pet_tim?: string;
+  san_tim?: string;
+  chuong?: string;
+  extra_info?: string;
 }
 
 export async function createProductAction(data: ProductFormData) {
