@@ -18,7 +18,7 @@ export function Navigation({ isLoggedIn, username }: NavigationProps) {
           </Link>
         </li>
         <li className="font-medium list-none text-[14px] md:text-[18px]">
-          <Link href="/shopping" className="items-center inline-flex relative gap-[4px] md:gap-[8px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
+          <Link href="/category" className="items-center inline-flex relative gap-[4px] md:gap-[8px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
             <i className="fa-solid fa-cart-arrow-down"></i>
             <span>Shopping</span>
           </Link>

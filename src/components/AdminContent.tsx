@@ -4,11 +4,23 @@ import { useState, useRef, useTransition } from "react";
 import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from "@/app/actions/category";
 import { createProductAction, updateProductAction, deleteProductAction, ProductFormData } from "@/app/actions/product";
 import { createAccountAction, updateAccountAction, deleteAccountAction, AccountFormData } from "@/app/actions/account";
+import { uploadImageAction } from "@/app/actions/cloudinary";
+import { createNotificationAction, updateNotificationAction, deleteNotificationAction } from "@/app/actions/notification";
+
+export interface AdminNotification {
+  id: number;
+  title: string;
+  content: string;
+  image_url: string;
+  is_pinned: boolean;
+  is_active: boolean;
+  date: string;
+}
 
 export interface AdminStats {
   totalRevenue: number;
-  totalProducts: number;
-  totalUsers: number;
+  totalUnsoldAccounts: number;
+  totalSoldAccounts: number;
   totalOrders: number;
 }
 
@@ -90,6 +102,7 @@ export interface AdminContentProps {
   initialDistributors: AdminDistributor[];
   initialUsers: AdminUser[];
   initialOrders: AdminOrder[];
+  initialNotifications: AdminNotification[];
 }
 
 export function AdminContent({
@@ -100,8 +113,9 @@ export function AdminContent({
   initialDistributors,
   initialUsers,
   initialOrders,
+  initialNotifications,
 }: AdminContentProps) {
-  const [activeTab, setActiveTab] = useState<"stats" | "products" | "accounts" | "categories" | "distributors" | "users" | "orders">("stats");
+  const [activeTab, setActiveTab] = useState<"stats" | "products" | "accounts" | "categories" | "distributors" | "users" | "orders" | "notifications">("stats");
   
   // Trạng thái chung
   const [isPending, startTransition] = useTransition();
@@ -129,6 +143,82 @@ export function AdminContent({
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [categoryForm, setCategoryForm] = useState({ name: "", slug: "", description: "", image_url: "", sort_order: 0, fake_remaining_count: 0, fake_sold_count: 0 });
 
+  // States cho Thông báo
+  const [showAddNotification, setShowAddNotification] = useState(false);
+  const [editingNotificationId, setEditingNotificationId] = useState<number | null>(null);
+  const [notificationForm, setNotificationForm] = useState({ title: "", content: "", image_url: "", is_pinned: false, is_active: true });
+
+  // Cloudinary image upload states and handlers
+  const [isUploadingProduct, setIsUploadingProduct] = useState(false);
+  const [isUploadingCategory, setIsUploadingCategory] = useState(false);
+  const [isUploadingNotification, setIsUploadingNotification] = useState(false);
+
+  const handleNotificationImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploadingNotification(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const res = await uploadImageAction(formData);
+      if (res.error) {
+        alert(res.error);
+      } else if (res.url) {
+        setNotificationForm(prev => ({ ...prev, image_url: res.url }));
+      }
+    } catch (err: any) {
+      alert("Có lỗi xảy ra khi tải ảnh lên: " + err.message);
+    } finally {
+      setIsUploadingNotification(false);
+    }
+  };
+
+  const handleProductImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploadingProduct(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const res = await uploadImageAction(formData);
+      if (res.error) {
+        alert(res.error);
+      } else if (res.url) {
+        setProductForm(prev => ({ ...prev, image_url: res.url }));
+      }
+    } catch (err: any) {
+      alert("Có lỗi xảy ra khi tải ảnh lên: " + err.message);
+    } finally {
+      setIsUploadingProduct(false);
+    }
+  };
+
+  const handleCategoryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    setIsUploadingCategory(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    try {
+      const res = await uploadImageAction(formData);
+      if (res.error) {
+        alert(res.error);
+      } else if (res.url) {
+        setCategoryForm(prev => ({ ...prev, image_url: res.url }));
+      }
+    } catch (err: any) {
+      alert("Có lỗi xảy ra khi tải ảnh lên: " + err.message);
+    } finally {
+      setIsUploadingCategory(false);
+    }
+  };
+
 
   const tabs = [
     { key: "stats", label: "Thống kê" },
@@ -138,6 +228,7 @@ export function AdminContent({
     { key: "distributors", label: "Nhà PP" },
     { key: "users", label: "Người dùng" },
     { key: "orders", label: "Đơn hàng" },
+    { key: "notifications", label: "Thông báo" },
   ] as const;
 
   return (
@@ -159,12 +250,12 @@ export function AdminContent({
             <p className="text-[rgb(251,191,36)] text-[18px] md:text-[24px] font-bold mt-1">{stats.totalRevenue.toLocaleString("vi-VN")}đ</p>
           </div>
           <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6 text-center">
-            <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">Sản phẩm</p>
-            <p className="text-[rgb(34,197,94)] text-[18px] md:text-[24px] font-bold mt-1">{stats.totalProducts}</p>
+            <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">Tài khoản trong kho</p>
+            <p className="text-[rgb(34,197,94)] text-[18px] md:text-[24px] font-bold mt-1">{stats.totalUnsoldAccounts}</p>
           </div>
           <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6 text-center">
-            <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">Người dùng</p>
-            <p className="text-[rgb(59,130,246)] text-[18px] md:text-[24px] font-bold mt-1">{stats.totalUsers}</p>
+            <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">Tài khoản đã bán</p>
+            <p className="text-[rgb(59,130,246)] text-[18px] md:text-[24px] font-bold mt-1">{stats.totalSoldAccounts}</p>
           </div>
           <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6 text-center">
             <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">Đơn hàng</p>
@@ -198,7 +289,35 @@ export function AdminContent({
                   </select>
                 </div>
                 
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">URL Ảnh SP</label><input type="text" value={productForm.image_url} onChange={e => setProductForm({...productForm, image_url: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1 md:col-span-3 border-t border-[rgba(238,238,238,0.1)] pt-3 mt-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Ảnh sản phẩm *</label>
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    <input 
+                      type="text" 
+                      placeholder="URL ảnh hoặc tải lên file..." 
+                      value={productForm.image_url} 
+                      onChange={e => setProductForm({...productForm, image_url: e.target.value})} 
+                      className="flex-1 px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] w-full" 
+                    />
+                    <label className="cursor-pointer px-4 py-2 bg-[rgb(55,65,81)] hover:bg-[rgb(75,85,99)] text-white text-[14px] rounded-lg border border-[rgb(75,85,99)] font-semibold transition-colors flex items-center justify-center shrink-0 w-full sm:w-auto min-w-[120px]">
+                      {isUploadingProduct ? (
+                        <span className="flex items-center gap-1">
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Đang tải...
+                        </span>
+                      ) : "Tải ảnh lên"}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleProductImageUpload} disabled={isUploadingProduct} />
+                    </label>
+                  </div>
+                  {productForm.image_url && (
+                    <div className="mt-2 relative w-24 h-24 border border-[rgb(75,85,99)] rounded-lg overflow-hidden bg-[rgb(17,24,39)]">
+                      <img src={productForm.image_url} alt="Xem trước sản phẩm" className="object-contain w-full h-full" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Giá bán thực tế (VNĐ) *</label><input type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Giá gốc / Gạch ngang (VNĐ)</label><input type="number" value={productForm.original_price} onChange={e => setProductForm({...productForm, original_price: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">% Giảm giá hiển thị label</label><input type="number" value={productForm.discount_percent} onChange={e => setProductForm({...productForm, discount_percent: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
@@ -479,8 +598,36 @@ export function AdminContent({
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên danh mục *</label><input type="text" value={categoryForm.name} onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Slug (URL) *</label><input type="text" value={categoryForm.slug} onChange={e => setCategoryForm({...categoryForm, slug: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Mô tả</label><input type="text" value={categoryForm.description} onChange={e => setCategoryForm({...categoryForm, description: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1 md:col-span-2 border-t border-[rgba(238,238,238,0.1)] pt-3 mt-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Ảnh danh mục</label>
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    <input 
+                      type="text" 
+                      placeholder="URL hoặc tải lên file..." 
+                      value={categoryForm.image_url} 
+                      onChange={e => setCategoryForm({...categoryForm, image_url: e.target.value})} 
+                      className="flex-1 px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] w-full" 
+                    />
+                    <label className="cursor-pointer px-4 py-2 bg-[rgb(55,65,81)] hover:bg-[rgb(75,85,99)] text-white text-[14px] rounded-lg border border-[rgb(75,85,99)] font-semibold transition-colors flex items-center justify-center shrink-0 w-full sm:w-auto min-w-[120px]">
+                      {isUploadingCategory ? (
+                        <span className="flex items-center gap-1">
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Đang tải...
+                        </span>
+                      ) : "Tải ảnh lên"}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleCategoryImageUpload} disabled={isUploadingCategory} />
+                    </label>
+                  </div>
+                  {categoryForm.image_url && (
+                    <div className="mt-2 relative w-24 h-24 border border-[rgb(75,85,99)] rounded-lg overflow-hidden bg-[rgb(17,24,39)]">
+                      <img src={categoryForm.image_url} alt="Xem trước danh mục" className="object-contain w-full h-full" />
+                    </div>
+                  )}
+                </div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Thứ tự hiển thị</label><input type="number" value={categoryForm.sort_order} onChange={e => setCategoryForm({...categoryForm, sort_order: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">URL Ảnh danh mục</label><input type="text" placeholder="https://..." value={categoryForm.image_url} onChange={e => setCategoryForm({...categoryForm, image_url: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Số lượng đang bán (ảo)</label><input type="number" value={categoryForm.fake_remaining_count} onChange={e => setCategoryForm({...categoryForm, fake_remaining_count: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Số lượng đã bán (ảo)</label><input type="number" value={categoryForm.fake_sold_count} onChange={e => setCategoryForm({...categoryForm, fake_sold_count: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
               </div>
@@ -671,6 +818,175 @@ export function AdminContent({
                       }`}>
                         {o.status === "completed" ? "Hoàn thành" : o.status === "pending" ? "Chờ xử lý" : o.status === "refunded" ? "Hoàn tiền" : "Đã hủy"}
                       </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Notifications tab */}
+      {activeTab === "notifications" && (
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">Thông báo</h3>
+            <button onClick={() => {
+              setShowAddNotification(true);
+              setEditingNotificationId(null);
+              setNotificationForm({ title: "", content: "", image_url: "", is_pinned: false, is_active: true });
+            }} className="px-3 md:px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] md:text-[14px] rounded-lg transition-colors">+ Thêm Thông Báo</button>
+          </div>
+
+          {showAddNotification && (
+            <div className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] animate-fade-in">
+              <h4 className="text-white font-bold text-[14px] mb-3">{editingNotificationId ? "Sửa thông báo" : "Thêm thông báo mới"}</h4>
+              <div className="flex flex-col gap-3 mb-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tiêu đề *</label>
+                  <input type="text" value={notificationForm.title} onChange={e => setNotificationForm({...notificationForm, title: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] w-full" />
+                </div>
+                
+                <div className="flex flex-col gap-1 border-t border-[rgba(238,238,238,0.1)] pt-3 mt-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Ảnh thông báo</label>
+                  <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                    <input 
+                      type="text" 
+                      placeholder="URL ảnh hoặc tải lên file..." 
+                      value={notificationForm.image_url} 
+                      onChange={e => setNotificationForm({...notificationForm, image_url: e.target.value})} 
+                      className="flex-1 px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] w-full" 
+                    />
+                    <label className="cursor-pointer px-4 py-2 bg-[rgb(55,65,81)] hover:bg-[rgb(75,85,99)] text-white text-[14px] rounded-lg border border-[rgb(75,85,99)] font-semibold transition-colors flex items-center justify-center shrink-0 w-full sm:w-auto min-w-[120px]">
+                      {isUploadingNotification ? (
+                        <span className="flex items-center gap-1">
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Đang tải...
+                        </span>
+                      ) : "Tải ảnh lên"}
+                      <input type="file" accept="image/*" className="hidden" onChange={handleNotificationImageUpload} disabled={isUploadingNotification} />
+                    </label>
+                  </div>
+                  {notificationForm.image_url && (
+                    <div className="mt-2 relative w-24 h-24 border border-[rgb(75,85,99)] rounded-lg overflow-hidden bg-[rgb(17,24,39)]">
+                      <img src={notificationForm.image_url} alt="Xem trước thông báo" className="object-contain w-full h-full" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Nội dung (hỗ trợ xuống dòng) *</label>
+                  <textarea rows={4} value={notificationForm.content} onChange={e => setNotificationForm({...notificationForm, content: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] w-full" />
+                </div>
+                <div className="flex gap-4 mt-1">
+                  <label className="flex items-center gap-2 text-[14px] text-white cursor-pointer select-none">
+                    <input type="checkbox" checked={notificationForm.is_pinned} onChange={e => setNotificationForm({...notificationForm, is_pinned: e.target.checked})} className="accent-[rgb(251,191,36)]" />
+                    Ghim lên đầu
+                  </label>
+                  <label className="flex items-center gap-2 text-[14px] text-white cursor-pointer select-none">
+                    <input type="checkbox" checked={notificationForm.is_active} onChange={e => setNotificationForm({...notificationForm, is_active: e.target.checked})} className="accent-[rgb(251,191,36)]" />
+                    Hiển thị (Kích hoạt)
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button 
+                  disabled={isPending}
+                  onClick={() => { 
+                    startTransition(async () => {
+                      const res = editingNotificationId 
+                        ? await updateNotificationAction(editingNotificationId, notificationForm)
+                        : await createNotificationAction(notificationForm);
+                      if (res.error) alert(res.error);
+                      else {
+                        alert(editingNotificationId ? "Sửa thành công!" : "Thêm thành công!");
+                        setShowAddNotification(false);
+                      }
+                    });
+                  }} 
+                  className="px-4 py-2 bg-[rgb(34,197,94)] hover:bg-[rgb(22,163,74)] text-white font-bold text-[13px] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isPending ? "Đang lưu..." : "Lưu"}
+                </button>
+                <button onClick={() => setShowAddNotification(false)} className="px-4 py-2 bg-[rgb(75,85,99)] hover:bg-[rgb(107,114,128)] text-white font-bold text-[13px] rounded-lg transition-colors disabled:opacity-50" disabled={isPending}>Hủy</button>
+              </div>
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] md:text-[14px]">
+              <thead><tr className="border-b border-[rgb(75,85,99)]">
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)] w-12">ID</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)] w-20">Ảnh</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Tiêu đề</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)] hidden md:table-cell">Nội dung</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)] w-20">Trạng thái</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)] w-32">Thao tác</th>
+              </tr></thead>
+              <tbody>
+                {initialNotifications.map(n => (
+                  <tr key={n.id} className="border-b border-[rgb(55,65,81)]">
+                    <td className="py-3 text-white">#{n.id}</td>
+                    <td className="py-3">
+                      {n.image_url ? (
+                        <div className="w-12 h-8 border border-[rgb(75,85,99)] rounded overflow-hidden bg-[rgb(17,24,39)]">
+                          <img src={n.image_url} alt="" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-[rgba(238,238,238,0.4)]">Không có</span>
+                      )}
+                    </td>
+                    <td className="py-3 text-[rgb(251,191,36)] font-semibold">
+                      {n.is_pinned && <span className="mr-1 text-[11px] bg-red-600/30 text-red-400 px-1 py-0.5 rounded font-bold">PIN</span>}
+                      {n.title}
+                    </td>
+                    <td className="py-3 text-white hidden md:table-cell max-w-xs truncate" title={n.content}>{n.content}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-1 rounded text-[11px] font-bold ${n.is_active ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]"}`}>
+                        {n.is_active ? "Hiện" : "Ẩn"}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <div className="flex gap-1">
+                        <button 
+                          disabled={isPending}
+                          onClick={() => {
+                            const notif = initialNotifications.find(x => x.id === n.id);
+                            if (notif) {
+                              setNotificationForm({ 
+                                title: notif.title, 
+                                content: notif.content, 
+                                image_url: notif.image_url || "", 
+                                is_pinned: notif.is_pinned, 
+                                is_active: notif.is_active 
+                              });
+                              setEditingNotificationId(notif.id);
+                              setShowAddNotification(true);
+                            }
+                          }}
+                          className="px-2 py-1 bg-[rgb(59,130,246)] text-white text-[11px] rounded disabled:opacity-50"
+                        >
+                          Sửa
+                        </button>
+                        <button 
+                          disabled={isPending}
+                          onClick={() => {
+                            if (confirm(`Bạn có chắc chắn muốn xóa thông báo #${n.id}?`)) {
+                              startTransition(async () => {
+                                const res = await deleteNotificationAction(n.id);
+                                if (res.error) alert(res.error);
+                              });
+                            }
+                          }}
+                          className="px-2 py-1 bg-[rgb(220,38,38)] text-white text-[11px] rounded disabled:opacity-50"
+                        >
+                          Xóa
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

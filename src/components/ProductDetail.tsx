@@ -24,11 +24,11 @@ export function ProductDetail({ name, image, price, originalPrice, discount, pet
     <>
       <div className="w-full max-w-[1200px] mx-auto px-[14px] animate-fade-in-up">
         <div className="md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px] md:h-full">
-          <article className="items-start md:items-center flex flex-col md:flex-row size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal gap-[16px] md:gap-[24px] pt-12 md:pt-4 pr-4 pb-6 pl-4 border border-[rgb(253,230,138)] md:border-none">
-            <div className="font-medium absolute left-4 top-4 text-[rgb(251,191,36)] text-[20px] md:text-[24px] font-[family-name:var(--font-nunito)]">
+          <article className="items-start flex flex-col md:flex-row size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal gap-[16px] md:gap-[24px] pt-4 md:pt-16 pr-4 pb-6 pl-4 border border-[rgb(253,230,138)] md:border-none">
+            <div className="font-medium text-[rgb(251,191,36)] text-[20px] md:text-[24px] font-[family-name:var(--font-nunito)] w-full md:absolute md:left-4 md:top-4 md:w-auto z-10 mb-2 md:mb-0">
               {name}
             </div>
-            <figure className="relative w-full md:w-[50%] mt-[12px]">
+            <figure className="relative w-full md:w-[50%] mt-2 md:mt-[12px]">
               <div className="items-center flex font-bold justify-center absolute w-[50px] md:w-[60px] h-[50px] md:h-[60px] top-0 right-0 text-white text-[18px] md:text-[22px] p-1 z-[2] animate-blink-badge font-[family-name:var(--font-nunito)]">
                 <span className="block text-[rgb(254,239,199)]">-{discount}</span>
               <span className="block absolute left-0 top-0 right-0 bottom-0 z-[-1] before:absolute before:left-0 before:top-0 before:right-0 before:bottom-0 before:bg-[rgb(220,38,38)] before:content-[''] before:z-[-1] before:rounded-xs after:absolute after:left-0 after:top-0 after:right-0 after:bottom-0 after:bg-[rgb(220,38,38)] after:content-[''] after:rotate-45 after:z-[-1] after:rounded-xs animate-blink-badge"></span>
@@ -95,7 +95,7 @@ export function ProductDetail({ name, image, price, originalPrice, discount, pet
       {/* Modal Mua Hàng */}
       {showModal && modalMode === "zalo" ? (
         <div className="fixed inset-0 z-[9999] flex justify-end bg-black/60" onClick={() => setShowModal(false)}>
-          <div className="bg-[#0f172a] border-l border-[rgba(255,255,255,0.1)] w-full max-w-[360px] h-full p-6 overflow-y-auto animate-fade-in flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-[#0f172a] border-l border-[rgba(255,255,255,0.1)] w-full max-w-[360px] h-full p-6 overflow-y-auto no-scrollbar animate-fade-in flex flex-col" onClick={e => e.stopPropagation()}>
             
             <div className="bg-white rounded-xl p-2 mb-6 flex items-center justify-center">
               <img src="/zaloqr.png" alt="Zalo QR" className="w-full aspect-square object-contain" onError={(e) => e.currentTarget.src = 'https://via.placeholder.com/300?text=Zalo+QR'} />

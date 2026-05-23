@@ -62,7 +62,7 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
             </li>
 
             <li className="font-medium list-none text-[14px] md:text-[17px]">
-              <Link href="/shopping" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
+              <Link href="/category" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
                 <i className="fa-solid fa-cart-arrow-down" />
                 <span>Shopping</span>
               </Link>
@@ -107,7 +107,7 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
               <span>Thông Báo</span>
             </Link>
 
-            <Link href="/shopping" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
+            <Link href="/category" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
               <i className="fa-solid fa-cart-arrow-down" />
               <span>Shopping</span>
             </Link>

@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { AdminContent, AdminStats, AdminProduct, AdminAccount, AdminCategory, AdminDistributor, AdminUser, AdminOrder } from "@/components/AdminContent";
+import { AdminContent, AdminStats, AdminProduct, AdminAccount, AdminCategory, AdminDistributor, AdminUser, AdminOrder, AdminNotification } from "@/components/AdminContent";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
+
 
 export const metadata: Metadata = {
   title: "Admin - BomRauTFT",
@@ -20,14 +21,14 @@ export default async function AdminPage() {
 
   // 1. Fetch Stats
   const [revenueRows] = await pool.query<RowDataPacket[]>("SELECT SUM(amount) as total FROM orders WHERE status = 'completed'");
-  const [productCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM products");
-  const [userCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM users");
+  const [unsoldAccountCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM accounts WHERE status = 'available'");
+  const [soldAccountCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM accounts WHERE status = 'sold'");
   const [orderCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM orders");
 
   const stats: AdminStats = {
     totalRevenue: Number(revenueRows[0].total) || 0,
-    totalProducts: Number(productCountRows[0].total) || 0,
-    totalUsers: Number(userCountRows[0].total) || 0,
+    totalUnsoldAccounts: Number(unsoldAccountCountRows[0].total) || 0,
+    totalSoldAccounts: Number(soldAccountCountRows[0].total) || 0,
     totalOrders: Number(orderCountRows[0].total) || 0,
   };
 
@@ -157,6 +158,23 @@ export default async function AdminPage() {
     status: row.status as "pending" | "completed" | "cancelled" | "refunded",
   }));
 
+  // 7. Fetch Notifications
+  const [notificationRows] = await pool.query<RowDataPacket[]>(`
+    SELECT id, title, content, image_url, is_pinned, is_active, created_at
+    FROM notifications
+    ORDER BY id DESC
+  `);
+
+  const initialNotifications: AdminNotification[] = notificationRows.map(row => ({
+    id: row.id,
+    title: row.title,
+    content: row.content,
+    image_url: row.image_url || "",
+    is_pinned: Boolean(row.is_pinned),
+    is_active: Boolean(row.is_active),
+    date: new Date(row.created_at).toLocaleDateString("vi-VN"),
+  }));
+
   return (
     <div className="pt-[70px] md:pt-[90px] min-h-screen flex flex-col">
       <Header />
@@ -169,6 +187,7 @@ export default async function AdminPage() {
           initialDistributors={initialDistributors}
           initialUsers={initialUsers}
           initialOrders={initialOrders}
+          initialNotifications={initialNotifications}
         />
       </main>
       <Footer />
