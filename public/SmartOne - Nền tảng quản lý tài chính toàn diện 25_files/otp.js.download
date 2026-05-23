@@ -1,0 +1,677 @@
+﻿const otp = {};
+otp.arrIdError = [];
+otp.timecountdown = 30;
+
+otp.incorrectOTP = function (mes) {
+    $("#mesErrOTP").html('');
+
+    if (!$(".group-otp").hasClass("err")) {
+        $(".group-otp").addClass("err");
+        $("#mesErrOTP").addClass('err');
+        $("#mesErrOTP").show();
+    }
+    $("#mesErrOTP").html(mes);
+}
+
+otp.clearFormOTP = function () {
+    $(".otp-number").val("");
+    $("#mesErrOTP").html('');
+    $("#modalOTP .group-otp").removeClass("err");
+}
+
+otp.hideModalOTP = function () {
+    $("#modalOTP").modal("hide");
+}
+
+// chức năng này làm 2 việc 
+// 1 show Modal xác thực OTP
+// 2 đồng thời call API send OTP
+// => cần thêm tham số này vào HTML
+// data-required = true nếu bắt buộc send SMS OTP
+// data-required = "" không bắt buộc send SMS OTP
+// và data-type = chính cmd của chức năng đó
+otp.showPopupOTP = function (dom) {
+
+    // clear OTP old 
+    otp.clearFormOTP();
+
+    let typeCMD = $(dom).attr("data-type");
+    $("#btnConfirmOTP").attr("data-type", typeCMD);
+    $("#btnResendOTP").attr("data-type", typeCMD);
+
+    // 1. check xem bản thân chức năng này có bắt buộc dùng SMS OTP hay không
+    let isRequired = $(dom).attr("data-required"); // bắt buộc SMS OTP
+
+    if (isRequired) {
+
+        $(".smsOTP").show();
+        $(".smartOTP").hide();
+
+        // call API send SMS OTP có truyền p1 = cmd (của chức năng đó)
+        let p1 = typeCMD;
+        otp.GetOTPCountDown(p1);
+    } else {
+        // 2. case chức năng này không bắt buộc dùng SMS OTP
+        // => check đăng ký OTP của khách hàng là loại nào "SMS OTP || Smart OTP"   
+        if (global.authenType == "M") {
+            // 2.1 case KH đăng ký dùng smart OTP  
+            $(".smartOTP").show();
+            $(".smsOTP").hide();
+        }
+        else {
+            // 2.2 case KH đăng ký dùng SMS OTP
+            $(".smsOTP").show();
+            $(".smartOTP").hide();
+        }
+
+        // call API send OTP KHÔNG bắt buộc SMS => truyền p1 = ""  
+        otp.GetOTPCountDown("");
+    }
+
+    $("#modalOTP").modal("show");
+}
+
+otp.showPopupOTPForIPO = function (dom) {
+
+    // clear OTP old 
+    otp.clearFormOTP();
+
+    let typeCMD = $(dom).attr("data-type");
+    $("#btnConfirmOTP").attr("data-type", typeCMD);
+    $("#btnResendOTP").attr("data-type", typeCMD);
+
+    // 1. check xem bản thân chức năng này có bắt buộc dùng SMS OTP hay không
+    let isRequired = $(dom).attr("data-required"); // bắt buộc SMS OTP
+
+    if (isRequired) {
+
+        $(".smsOTP").show();
+        $(".smartOTP").hide();
+
+        // call API send SMS OTP có truyền p1 = cmd (của chức năng đó) 
+        otp.countDown();
+
+    } else {
+        // 2. case chức năng này không bắt buộc dùng SMS OTP
+        // => check đăng ký OTP của khách hàng là loại nào "SMS OTP || Smart OTP"   
+        if (global.authenType == "M") {
+            // 2.1 case KH đăng ký dùng smart OTP  
+            $(".smartOTP").show();
+            $(".smsOTP").hide();
+        }
+        else {
+            // 2.2 case KH đăng ký dùng SMS OTP
+            $(".smsOTP").show();
+            $(".smartOTP").hide();
+        }
+
+        // call API send OTP KHÔNG bắt buộc SMS => truyền p1 = ""   
+        otp.countDown();
+    }
+
+    $("#modalOTP").modal("show");
+}
+
+//otp.showPopupOTPChangePass = function (dom) {
+
+//    // clear OTP old
+//    otp.clearFormOTP();
+
+//    let typeCMD = $(dom).attr("data-type");
+//    $("#btnConfirmOTP").attr("data-type", typeCMD);
+//    $("#btnResendOTP").attr("data-type", typeCMD);
+
+//    // 1. check xem bản thân chức năng này có bắt buộc dùng SMS OTP hay không
+//    let isRequired = $(dom).attr("data-required"); // bắt buộc SMS OTP
+
+//    if (isRequired) {
+//        $(".smsOTP").show();
+//        $(".smartOTP").hide();
+
+//        // call API send SMS OTP có truyền p1 = cmd (của chức năng đó)
+//        let p1 = typeCMD;
+//        otp.GetOTPChangePass(p1);
+//    }
+//}
+
+otp.showPopupOTPForgotPasswordNoSession = function (mobile) {
+    var dom = $("#btnContinueStepOne");
+
+    // clear OTP old 
+    otp.clearFormOTP();
+    localStorage.removeItem("countDownTime");
+
+    let typeCMD = dom.attr("data-type");
+    $("#btnConfirmOTP").attr("data-type", typeCMD);
+    $("#btnResendOTP").attr("data-type", typeCMD);
+
+    $(".smsOTP").show();
+    $(".smartOTP").hide();
+
+    var textPleaseenterOTPcode = $("#textPleaseenterOTPcode").val();
+    $("#messageCurrentAccount").html(`${textPleaseenterOTPcode} *******${mobile}`);
+
+    otp.countDownForgotPassword();
+    $("#modalOTP").modal("show");
+}
+
+otp.showPopupLoginOTP = function (OTP_TYPE) {
+
+    // clear OTP old 
+    otp.clearFormOTP();
+
+    // case chức năng này không bắt buộc dùng SMS OTP
+    // => check đăng ký OTP của khách hàng là loại nào "SMS OTP || Smart OTP"  
+    if (OTP_TYPE == "M") {
+        // 2.1 case KH đăng ký dùng smart OTP  
+        $(".smartOTP").show();
+        $(".smsOTP").hide();
+    }
+    else {
+        // 2.2 case KH đăng ký dùng SMS OTP
+        $(".smsOTP").show();
+        $(".smartOTP").hide();
+    }
+
+    // call API send OTP KHÔNG bắt buộc SMS => truyền p1 = ""  
+    otp.CountDownLogin();
+}
+
+otp.validateOTP = function () {
+    var otpCode = '';
+
+    $('.otp-number').each(function (i, e) {
+        otpCode += $(e).val()
+    })
+
+    if (otpCode.trim() == '') {
+        otp.incorrectOTP($("#textOTPCodeCannotBeBlank").val());
+        return;
+    }
+
+    if (otpCode.trim() == '' || otpCode.length < 6) {
+        var err = $("#textInvalidOTPPleaseReenter").val();
+        otp.incorrectOTP(err);
+        return;
+    }
+
+    $("#txtOTP").val(otpCode);
+
+    return otpCode;
+}
+
+otp.actionConfirmOTP = function (dom) {
+    // 1. validate form OTP 
+    var otpCode = otp.validateOTP();
+    if (!otpCode) {
+        return
+    }
+
+    // 2. phân loại chức năng
+    let typeCMD = $(dom).attr("data-type");
+
+    switch (typeCMD) {
+        case "LoginOTP":
+        case "EquipmentManagement": {
+            otp.callLogin();
+            break;
+        }
+        case "ChangePass": otp.ChangePass(otpCode); break;
+        case "ResetWhenForget": ForgotPasswordVerifyOtp(otpCode); break;
+        case "ChangMethod": ChangMethod(); break;
+        case "AddContract": AddContract(otpCode); break; // case add hợp đồng infy
+        case "UpdateReduceContract": UpdateReduceContract(1, otpCode); break;
+        case "IPOPayment": onActionPayment(); break;
+        case "MultipleOrderPayment": MultipleOrderPayment(otpCode); break;
+        case "ConfirmRetailPaymentNotV": ConfirmRetailPaymentNotV(otpCode); break;
+    }
+}
+
+otp.callLogin = function () {
+    var formData = $("#LoginSubmit").serialize();
+
+    $.ajax({
+        type: "POST",
+        url: "/Account/Login",
+        cache: false,
+        data: formData,
+        contentType: "application/x-www-form-urlencoded",
+        dataType: "json",
+        async: false,
+        timeout: 1000,
+        success: function (vData) {
+            if (vData.success) {
+                var strDatetime = (new Date()).YYYYMMDDHHMMSS();
+                loginSuccessEvent($('#Account').val(), 'smow-' + strDatetime);
+                localStorage.setItem($('#Account').val(), strDatetime);
+
+                // remove localStorage countDownTime sau khi login thành công 
+                otp.clearIntervalInArr(otp.arrIdError);
+
+                // case 1: ChangePassword 
+                if (vData.action == "ChangePassword") {
+                    window.location.href = '/Account/ChangePassword';
+                    return;
+                }
+
+                // case 2: AuthenSecondFactor
+                if (vData.action == "AuthenSecondFactor") {
+                    location.href = '/Account/AuthenSecondFactor';
+                    return;
+                }
+
+                // case 3: login show màn hình confirm popupSmsOtp
+                if (vData.popupSmsOtp == "1") {
+                    window.location.href = '/?popupSmsOtp=1';
+                } else if (window.location.href.indexOf("en-US") > 0) {
+                    window.location.href = '/en-US';
+                } else {
+                    window.location.href = '/';
+                }
+                // end case 3
+            } else {
+                $("#mesErrOTP").html(vData.message).show();
+            }
+        },
+        error: function (err) {
+        }
+    });
+}
+
+otp.redirectPost = function (url, arrData) {
+    if (Array.isArray(arrData) || arrData.length < 1) {
+        window.location.href = url; return false;
+    }
+    let param = "";
+    $.each(arrData, function (i, obj) {
+        $.each(obj, function (key, val) {
+            param += `<input type="text" name="${key}" value="${val}" />`;
+        });
+    });
+
+    var form = $(`<form action="${url}" method="post">${param}</form>`);
+    $('body').append(form);
+    form.submit();
+}
+
+otp.clearIntervalInArr = function (arr) {
+    arr.forEach(function (item, index) {
+        clearInterval(item);
+    });
+
+    localStorage.removeItem("arr");
+    otp.arrIdError = [];
+};
+
+otp.GetOTP = function (forceSmsOtp) {
+    global.lang = location.href.indexOf("en-US") > 0 ? "en-US" : "vi-VN";
+    $.ajax({
+        type: "POST",
+        url: "/Api/Proxy",
+        cache: false,
+        data: JSON.stringify({
+            group: "S", user: global.user, session: global.session, language: global.lang == "vi-VN" ? "VI" : "EN", data: {
+                type: "string", cmd: "GetOTP", p1: forceSmsOtp, p2: "", p3: "", p4: ""
+            }
+        }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        async: false,
+        timeout: 1000,
+        success: function (vData) {
+
+            var mobile = vData.data[0].phoneLastThree;
+            var textPleaseenterOTPcode = $("#textPleaseenterOTPcode").val();
+            $("#messageCurrentAccount").html(`${textPleaseenterOTPcode} *******${mobile}`);
+        },
+        error: function (err) {
+            console.log(err)
+        }
+    });
+}
+
+// luồng đổi pass
+otp.GetOTPChangePass = function (forceSmsOtp) {
+
+    global.lang = location.href.indexOf("en-US") > 0 ? "en-US" : "vi-VN";
+
+    $.ajax({
+        type: "POST",
+        url: "/Api/Proxy",
+        cache: false,
+        data: JSON.stringify({
+            group: "S", user: global.user, session: global.session, language: global.lang == "vi-VN" ? "VI" : "EN", data: {
+                type: "string", cmd: "GetOTP", p1: forceSmsOtp, p2: "", p3: "", p4: ""
+            }
+        }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        async: false,
+        timeout: 1000,
+        success: function (vData) {
+
+            // case SMS-OTP đã tạm khóa  
+            if (vData.rc == -11003 || vData.rc == -11002) {
+                $("#alertMessageModal .modal-body").html(vData.rs);
+                $('#alertMessageModal').modal('show');
+                $("#btnResendOTP").focus();
+                otp.activeResend();
+                return;
+            }
+
+            var mobile = vData.data[0].phoneLastThree;
+            var textPleaseenterOTPcode = $("#textPleaseenterOTPcode").val();
+            $("#messageCurrentAccount").html(`${textPleaseenterOTPcode} *******${mobile}`);
+            otp.countDown();
+            $("#modalOTP").modal("show");
+        },
+        error: function (err) {
+            console.log(err)
+        }
+    });
+}
+
+otp.ResendOTPLogin = function () {
+    var user = $("#txtAccount").val();
+    var sessionId = $("#txtSessionId").val();
+    global.lang = location.href.indexOf("en-US") > 0 ? "en-US" : "vi-VN";
+
+    $.ajax({
+        type: "POST",
+        url: "/Api/Proxy",
+        cache: false,
+        data: JSON.stringify({
+            group: "S", user: user, session: sessionId, language: global.lang == "vi-VN" ? "VI" : "EN", data: {
+                type: "string", cmd: "GetSMSOtpForce", p1: "GetSMSOtpForce", p2: "", p3: "", p4: ""
+            }
+        }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        async: false,
+        timeout: 1000,
+        success: function (vData) {
+            if (vData && vData.rc === 1 && vData.data.length > 0) {
+                var mobile = vData.data[0].phoneLastThree;
+                var textPleaseenterOTPcode = $("#textPleaseenterOTPcode").val();
+                $("#messageCurrentAccount").html(`${textPleaseenterOTPcode} *******${mobile}`);
+            }
+        },
+        error: function (err) {
+            console.log(err)
+        }
+    });
+}
+
+otp.GetOTPCountDown = function (p1) {
+    // call API get OTP  
+    otp.GetOTP(p1);
+    otp.countDown();
+}
+
+otp.CountDownLogin = function () {
+    otp.countDown();
+    $("#modalOTP").modal("show");
+}
+
+$("#btnResendOTP").click(function () {
+
+    var dom = $(this);
+    if (!dom.attr("disable")) {
+        var type = dom.attr("data-type");
+
+        // case luồng quên mật khẩu chưa có session
+        if (type === "ResetWhenForget") {
+            fnForgotResendOtp(type);
+            return
+        }
+
+        // luồng đổi mật khẩu
+        if (type === "ChangePass") {
+            otp.GetOTPChangePass(type);
+            return
+        }
+
+        if (type === "EquipmentManagement") {
+            otp.GetSMSOTPQLTB();
+            otp.countDown();
+            return
+        }
+
+        if (type === "IPOPayment") {
+            otp.getOtpIpo();
+            otp.countDown();
+            return
+        }
+
+        // case luồng login 2 lớp
+        otp.ResendOTPLogin();
+        otp.countDown();
+    }
+});
+
+otp.countDown = function () {
+
+    // 1. clear all interval
+    otp.clearIntervalInArr(otp.arrIdError);
+
+    // 2. vô hiệu hóa button get OTP
+    let $btnGetOTP = $("#btnResendOTP");
+    let $btnNumberResendOTP = $("#btnNumberResendOTP");
+    otp.UnactiveResend();
+
+    // 3. lấy thời gian được config 
+    var countDownTime = otp.timecountdown; // 30s mới được phép resend OTP 1 lần
+
+    // 4. giảm 1 đơn vị sau 1s
+    var idInterval = setInterval(function () {
+        $btnNumberResendOTP.html(` (${countDownTime}s)`);
+        countDownTime = countDownTime - 1;
+
+        if (countDownTime <= 0) {
+            clearInterval(idInterval);
+            $btnNumberResendOTP.html("");
+            otp.activeResend();
+            localStorage.removeItem("arr");
+            otp.arrIdError = [];
+        }
+    }, 1000);
+
+    otp.arrIdError.push(idInterval);
+    localStorage.setItem("arr", otp.arrIdError);
+}
+
+otp.countDownForgotPassword = function () {
+
+    // 1. clear all interval
+    otp.clearIntervalInArr(otp.arrIdError);
+
+    // 2. vô hiệu hóa button get OTP
+    let $btnGetOTP = $("#btnResendOTP");
+    let $btnNumberResendOTP = $("#btnNumberResendOTP");
+    otp.UnactiveResend();
+
+    // 3. lấy thời gian được config 
+    var countDownTime;
+    if (localStorage.getItem("countDownTime")) {
+        countDownTime = localStorage.getItem("countDownTime");
+    } else {
+        countDownTime = 30; // 30s mới được phép resend OTP 1 lần
+    }
+
+    // 4. giảm 1 đơn vị sau 1s
+    var idInterval = setInterval(function () {
+        $btnNumberResendOTP.html(`(${countDownTime}s)`);
+        countDownTime = countDownTime - 1;
+        localStorage.setItem("countDownTime", countDownTime);
+
+        if (countDownTime < 0) {
+            clearInterval(idInterval);
+            $btnNumberResendOTP.html("");
+            localStorage.removeItem("countDownTime");
+            otp.activeResend();
+        }
+    }, 1000);
+
+    otp.arrIdError.push(idInterval);
+}
+
+otp.activeResend = () => {
+    let $btnGetOTP = $("#btnResendOTP");
+    $btnGetOTP.addClass("active");
+    $btnGetOTP.removeAttr("disable");
+}
+
+otp.UnactiveResend = () => {
+    let $btnGetOTP = $("#btnResendOTP");
+    $btnGetOTP.removeClass("active");
+    $btnGetOTP.attr("disable", "disable");
+}
+
+$('.otp-number').on('keyup', function (e) {
+    var currentIndex = parseInt($(this).attr('tabindex'));
+
+    if ($(this).val() != undefined && $(this).val().trim() != '') {
+        if (currentIndex > 6) return;
+
+        var nextIndex = currentIndex + 1;
+        var nextElement = $('.otp-number[tabindex="' + nextIndex + '"]');
+        nextElement.focus();
+
+        if (currentIndex == 6) {
+            $("#btnConfirmOTP").focus();
+        }
+    }
+
+    // lùi tab index khi gõ "Backspace" 
+    if (e.key == 'Backspace') {
+        if (currentIndex > 6 || currentIndex <= 0) return;
+
+        if ($(this).val().length > 0) return;
+
+        var preveIndex = currentIndex - 1;
+        var preveElement = $('.otp-number[tabindex="' + preveIndex + '"]');
+        preveElement.focus();
+    }
+
+    $('.group-otp').removeClass("err");
+    $("#mesErrOTP").hide();
+})
+
+$("#modalOTP").on('shown.bs.modal', function () {
+    $("#FirstOtpCharacter").focus();
+});
+
+$("#modalOTP").on("hidden.bs.modal", function () {
+    $("#mesErrOTP").removeClass('err').hide();
+    $(".group-otp").removeClass('err');
+    $("#wraning-9998-wrapper").show();
+    $("#wraning-9997-wrapper").hide();
+    $(".smsOTP").show();
+    $(".smartOTP").hide();
+    $(".modal-backdrop").remove();
+});
+
+$("#closemodalOTP").click(function () {
+    $("#txtOTP").val('');
+    $(".otp-number").val('');
+    //otp.clearIntervalInArr(otp.arrIdError); 
+});
+
+otp.handleEnter = function () {
+    var input = document.getElementById("lastOtpNumber");
+    if (input) {
+        input.addEventListener("keypress", function (event) {
+            if (event.key === "Enter") {
+                document.getElementById("btnConfirmOTP").focus();
+                event.preventDefault();
+                document.getElementById("btnConfirmOTP").click();
+            }
+        });
+    }
+}
+
+otp.GetSMSOTPQLTB = function () {
+    const user = $("#txtAccount").val();
+    const sessionId = $("#txtSessionId").val();
+    global.lang = location.href.indexOf("en-US") > 0 ? "en-US" : "vi-VN";
+
+    const req = {
+        user: user,
+        session: sessionId,
+        language: global.lang === "vi-VN" ? "VI" : "EN",
+        group: 'S',
+        data: {
+            channel: "S",
+            type: "string",
+            cmd: "GetSMSOtpQLTB",
+        }
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/Api/ProxyAccount",
+        cache: false,
+        data: JSON.stringify(req),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        async: false,
+        timeout: 1000,
+        success: function (vData) {
+            if (vData && (vData.rc === 1 || vData.rc === -11002) && vData.data.length > 0) {
+                var mobile = vData.data[0].phoneLastThree;
+                var textPleaseenterOTPcode = $("#textPleaseenterOTPcode").val();
+                $("#messageCurrentAccount").html(`${textPleaseenterOTPcode} *******${mobile}`);
+            }
+
+            if (vData.rc === -1 && vData.rs === "FOException.InvalidSessionException" && vData.cmd === "-1111") {
+                $('#alertModalQLTB').modal('show');
+            }
+        },
+        error: function (err) {
+            console.log(err)
+        }
+    });
+}
+
+otp.getOtpIpo = function () {
+    const clientJS = new ClientJS();
+    const headerReq = {
+        "X-AUTH-USER": global.user,
+        "X-AUTH-SESSION": global.session,
+        "X-REQUEST-ID": crypto.randomUUID() + "|" + clientJS.getOS() + clientJS.getOSVersion() + "|" + clientJS.getBrowser() + clientJS.getBrowserVersion() + "|" + global.version,
+        "X-LANGUAGE": global.lang == 'vi-VN' ? "VI" : "EN",
+        "X-CHANNEL": "S",
+        "X-API-VERSION": "2.0"
+    }
+
+    try {
+        $.ajax({
+            type: "POST",
+            url: global.ipo + "/otp/get",
+            cache: false,
+            headers: headerReq,
+            data: JSON.stringify({}),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (res) { },
+            error: function (err) {
+                console.log(err);
+                jAlert(err.responseJSON.code + " - " + err.responseJSON.message, "Thông báo");
+            }
+        })
+    } catch (e) {
+        console.log(e)
+    }
+};
+
+otp.init = function () {
+    otp.handleEnter();
+}
+
+otp.init();
+
+// với mỗi chức năng cần bắt buộc gửi SMS otp cần truyền vào tham số p1 chính là cmd của function cần thực thi chức năng đó
+
+
+
+
