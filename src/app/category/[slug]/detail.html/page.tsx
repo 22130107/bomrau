@@ -6,6 +6,7 @@ import { ProductDetail } from "@/components/ProductDetail";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import { notFound } from "next/navigation";
+import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Chi Tiết Sản Phẩm - Shop BomRauTFT",
@@ -54,6 +55,23 @@ export default async function ProductDetailPage({
   `, [productId]);
   const realRemainingCount = accounts[0].count;
 
+  // Lấy session và thông tin người dùng hiện tại
+  const session = await getSession();
+  let currentUser = null;
+  if (session) {
+    const [userRows] = await pool.query<RowDataPacket[]>(
+      "SELECT id, username, balance FROM users WHERE id = ? LIMIT 1",
+      [session.userId]
+    );
+    if (userRows.length > 0) {
+      currentUser = {
+        id: userRows[0].id,
+        username: userRows[0].username,
+        balance: Number(userRows[0].balance),
+      };
+    }
+  }
+
   return (
     <div className="pt-[70px] md:pt-[90px]">
       <Header />
@@ -65,6 +83,8 @@ export default async function ProductDetailPage({
         ]} />
         <div className="pt-6 md:pt-10 pb-10">
           <ProductDetail 
+            productId={Number(productId)}
+            currentUser={currentUser}
             name={product.title}
             image={product.image_url || category.image_url}
             price={Number(product.price)}

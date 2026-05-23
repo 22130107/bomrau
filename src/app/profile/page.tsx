@@ -76,6 +76,7 @@ export default async function ProfilePage() {
       <main className="flex-1 py-6 md:py-10 px-4">
         <ProfileContent
           user={{
+            id: user.id,
             username: user.username,
             email: user.email || "Chưa cập nhật",
             balance: Number(user.balance),
