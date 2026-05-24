@@ -28,6 +28,8 @@ interface OrderRow extends RowDataPacket {
   amount: number;
   status: "pending" | "completed" | "cancelled" | "refunded";
   created_at: string;
+  login_username: string | null;
+  login_password: string | null;
 }
 
 interface StatsRow extends RowDataPacket {
@@ -55,15 +57,17 @@ export default async function ProfilePage() {
        COUNT(*) AS total_orders
      FROM orders
      WHERE user_id = ? AND status = 'completed'`,
-    [session.userId]
+     [session.userId]
   );
   const stats = statsRows[0];
 
   // ── 3. Lịch sử mua hàng (kèm trạng thái đơn) ─────────────────────────────
   const [orderRows] = await pool.query<OrderRow[]>(
-    `SELECT o.id, p.title AS product_title, o.amount, o.status, o.created_at
+    `SELECT o.id, p.title AS product_title, o.amount, o.status, o.created_at,
+            a.login_username, a.login_password
      FROM orders o
      JOIN products p ON o.product_id = p.id
+     LEFT JOIN accounts a ON o.account_id = a.id
      WHERE o.user_id = ?
      ORDER BY o.created_at DESC
      LIMIT 50`,
@@ -91,6 +95,8 @@ export default async function ProfilePage() {
               date: new Date(o.created_at).toLocaleDateString("vi-VN"),
               price: Number(o.amount),
               status: o.status,
+              login_username: o.login_username || undefined,
+              login_password: o.login_password || undefined,
             })),
           }}
         />

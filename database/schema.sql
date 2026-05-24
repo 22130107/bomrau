@@ -187,13 +187,13 @@ CREATE TABLE notifications (
 -- SEED DATA (Dữ liệu mẫu)
 -- ============================================
 
--- Admin account (password: admin123 - cần hash bằng bcrypt trong app)
+-- Admin account (password: admin123)
 INSERT INTO users (username, email, password_hash, role) VALUES
-('admin', 'admin@bomrautft.com', '$2b$10$PLACEHOLDER_HASH_ADMIN', 'admin');
+('admin', 'admin@bomrautft.com', '$2b$10$r3vF6jpzt30HPkcnDItQpOWn3AU3NLdoJPUcZGGqiVySG.x.cHIq6', 'admin');
 
--- NPP account (password: npp123 - cần hash bằng bcrypt trong app)
+-- NPP account (password: npp123)
 INSERT INTO users (username, email, password_hash, role) VALUES
-('npp', 'npp@bomrautft.com', '$2b$10$PLACEHOLDER_HASH_NPP', 'npp');
+('npp', 'npp@bomrautft.com', '$2b$10$54nA5wflVLuQiJQy3V70duc9DwB9JkJ2Hr6BAuunf2BXiLVM0l1iy', 'npp');
 
 -- Distributor cho NPP
 INSERT INTO distributors (user_id, name, domain, phone, email) VALUES

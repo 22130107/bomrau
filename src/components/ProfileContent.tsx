@@ -10,6 +10,8 @@ interface PurchasedAccount {
   date: string;
   price: number;
   status: "pending" | "completed" | "cancelled" | "refunded";
+  login_username?: string;
+  login_password?: string;
 }
 
 interface UserData {
@@ -43,13 +45,24 @@ const ORDER_STATUS: Record<string, { label: string; color: string }> = {
 };
 
 export function ProfileContent({ user }: ProfileContentProps) {
+  const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "MB";
+  const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "0338180818";
+  const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "NGUYEN VAN A";
+
   const [activeTab, setActiveTab] = useState<"info" | "topup" | "history">("info");
   const [topupAmount, setTopupAmount] = useState("100000");
   const [paymentMethod, setPaymentMethod] = useState<"bank" | "momo" | "card">("bank");
   const [showQR, setShowQR] = useState(false);
+  const [topupError, setTopupError] = useState<string | null>(null);
 
   // States for copying feedback
   const [copiedBankInfo, setCopiedBankInfo] = useState({ stk: false, amount: false, content: false });
+  const [copiedHistory, setCopiedHistory] = useState<Record<string, boolean>>({});
+  const [expandedOrders, setExpandedOrders] = useState<Record<number, boolean>>({});
+
+  const toggleOrderExpand = (orderId: number) => {
+    setExpandedOrders(prev => ({ ...prev, [orderId]: !prev[orderId] }));
+  };
 
   const topupOptions = [50000, 100000, 200000, 500000, 1000000, 2000000];
   const roleStyle = ROLE_LABEL[user.role] ?? ROLE_LABEL.user;
@@ -59,6 +72,14 @@ export function ProfileContent({ user }: ProfileContentProps) {
     setCopiedBankInfo(prev => ({ ...prev, [type]: true }));
     setTimeout(() => {
       setCopiedBankInfo(prev => ({ ...prev, [type]: false }));
+    }, 2000);
+  };
+
+  const copyHistoryToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedHistory(prev => ({ ...prev, [key]: true }));
+    setTimeout(() => {
+      setCopiedHistory(prev => ({ ...prev, [key]: false }));
     }, 2000);
   };
 
@@ -208,7 +229,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       : "bg-[rgb(31,41,55)] border-[rgb(75,85,99)] text-gray-300 hover:border-gray-500"
                   }`}
                 >
-                  🏦 Chuyển khoản (Tự động)
+                  Chuyển khoản (Tự động)
                 </button>
                 <button
                   onClick={() => { setPaymentMethod("momo"); setShowQR(false); }}
@@ -218,7 +239,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       : "bg-[rgb(31,41,55)] border-[rgb(75,85,99)] text-gray-300 hover:border-gray-500"
                   }`}
                 >
-                  🌸 Ví MoMo (Bảo trì)
+                  Ví MoMo (Bảo trì)
                 </button>
                 <button
                   onClick={() => { setPaymentMethod("card"); setShowQR(false); }}
@@ -228,7 +249,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       : "bg-[rgb(31,41,55)] border-[rgb(75,85,99)] text-gray-300 hover:border-gray-500"
                   }`}
                 >
-                  💳 Thẻ cào (Bảo trì)
+                  Thẻ cào (Bảo trì)
                 </button>
               </div>
             </div>
@@ -272,19 +293,27 @@ export function ProfileContent({ user }: ProfileContentProps) {
                   value={topupAmount}
                   onChange={(e) => {
                     setTopupAmount(e.target.value);
+                    setTopupError(null);
                     setShowQR(false);
                   }}
                   placeholder="Nhập số tiền nạp tùy chọn (VNĐ)"
                   className="w-full px-4 py-3 bg-[rgb(31,41,55)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] transition-colors"
                 />
 
+                {topupError && (
+                  <div className="bg-[rgba(220,38,38,0.1)] border border-[rgba(220,38,38,0.3)] p-2.5 rounded-lg mt-2 text-center font-sans animate-fade-in">
+                    <p className="text-[rgb(248,113,113)] text-[12px]">{topupError}</p>
+                  </div>
+                )}
+
                 {!showQR ? (
                   <button
                     onClick={() => {
                       if (!topupAmount || isNaN(Number(topupAmount)) || Number(topupAmount) < 1000) {
-                        alert("Số tiền nạp tối thiểu là 1,000 VNĐ.");
+                        setTopupError("Số tiền nạp tối thiểu là 1,000 VNĐ.");
                         return;
                       }
+                      setTopupError(null);
                       setShowQR(true);
                     }}
                     className="mt-2 w-full py-3.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-extrabold text-[16px] rounded-lg transition-colors cursor-pointer shadow-[0_0_15px_rgba(251,191,36,0.15)]"
@@ -298,7 +327,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                     <div className="flex flex-col items-center shrink-0">
                       <div className="bg-white rounded-xl p-3 flex items-center justify-center shadow-lg">
                         <img
-                          src={`https://img.vietqr.io/image/MB-0338180818-compact.png?amount=${topupAmount}&addInfo=BOMRAU%20NAP%20${user.id}`}
+                          src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${topupAmount}&addInfo=BOMRAU%20NAP%20${user.id}`}
                           alt="VietQR SePay"
                           className="w-[180px] h-[180px] object-contain"
                         />
@@ -312,20 +341,20 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       
                       <div className="flex justify-between py-1.5 border-b border-gray-800">
                         <span className="text-gray-400 font-sans">Ngân hàng:</span>
-                        <span className="text-white font-bold">MB Bank (Quân Đội)</span>
+                        <span className="text-white font-bold">{bankName === "MB" ? "MB Bank (Quân Đội)" : bankName}</span>
                       </div>
 
                       <div className="flex justify-between py-1.5 border-b border-gray-800">
                         <span className="text-gray-400 font-sans">Chủ tài khoản:</span>
-                        <span className="text-white font-bold uppercase">NGUYEN VAN A</span>
+                        <span className="text-white font-bold uppercase">{bankHolder}</span>
                       </div>
 
                       <div className="flex justify-between py-1.5 border-b border-gray-800">
                         <span className="text-gray-400 font-sans">Số tài khoản:</span>
                         <div className="flex items-center gap-2">
-                          <span className="text-white font-bold">0338180818</span>
+                          <span className="text-white font-bold">{bankAccount}</span>
                           <button
-                            onClick={() => copyToClipboard("0338180818", "stk")}
+                            onClick={() => copyToClipboard(bankAccount, "stk")}
                             className="text-[rgb(251,191,36)] text-[12px] font-sans hover:underline cursor-pointer"
                           >
                             {copiedBankInfo.stk ? "Đã chép" : "Copy"}
@@ -360,7 +389,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       </div>
 
                       <div className="bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)] p-2.5 rounded-lg mt-1 text-left w-full text-[11px] leading-relaxed text-gray-300 font-sans">
-                        ⚠️ <strong>Lưu ý:</strong> Chuyển đúng nội dung <strong className="text-white">BOMRAU NAP {user.id}</strong> để hệ thống tự động nhận dạng giao dịch và cộng tiền sau 1-2 phút.
+                        <strong>Lưu ý:</strong> Chuyển đúng nội dung <strong className="text-white">BOMRAU NAP {user.id}</strong> để hệ thống tự động nhận dạng giao dịch và cộng tiền sau 1-2 phút.
                       </div>
                     </div>
                   </div>
@@ -391,20 +420,64 @@ export function ProfileContent({ user }: ProfileContentProps) {
                   return (
                     <div
                       key={acc.id}
-                      className="flex justify-between items-center p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] hover:border-[rgba(251,191,36,0.4)] transition-colors"
+                      className="flex flex-col p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] hover:border-[rgba(251,191,36,0.4)] transition-colors"
                     >
-                      <div className="flex flex-col gap-1">
-                        <p className="text-white font-semibold text-[14px] md:text-[15px]">{acc.name}</p>
-                        <div className="flex items-center gap-2">
-                          <p className="text-[rgba(238,238,238,0.5)] text-[12px]">{acc.date}</p>
-                          <span className={`text-[11px] font-semibold ${statusStyle.color}`}>
-                            • {statusStyle.label}
-                          </span>
+                      <div className="flex justify-between items-center w-full">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-white font-semibold text-[14px] md:text-[15px]">{acc.name}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[rgba(238,238,238,0.5)] text-[12px]">{acc.date}</p>
+                            <span className={`text-[11px] font-semibold ${statusStyle.color}`}>
+                              • {statusStyle.label}
+                            </span>
+                          </div>
                         </div>
+                        <p className="text-[rgb(251,191,36)] font-bold text-[14px] md:text-[16px] shrink-0 ml-3">
+                          {acc.price.toLocaleString("vi-VN")}đ
+                        </p>
                       </div>
-                      <p className="text-[rgb(251,191,36)] font-bold text-[14px] md:text-[16px] shrink-0 ml-3">
-                        {acc.price.toLocaleString("vi-VN")}đ
-                      </p>
+
+                      {acc.status === "completed" && acc.login_username && (
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            onClick={() => toggleOrderExpand(acc.id)}
+                            className="px-3 py-1 bg-[rgb(15,23,42)] border border-[rgb(75,85,99)] hover:border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[12px] font-sans font-semibold rounded-lg transition-colors cursor-pointer"
+                          >
+                            {expandedOrders[acc.id] ? "Ẩn thông tin nick" : "Xem thông tin nick"}
+                          </button>
+                        </div>
+                      )}
+
+                      {acc.status === "completed" && acc.login_username && expandedOrders[acc.id] && (
+                        <div className="mt-3 pt-3 border-t border-gray-700 flex flex-col gap-2.5 text-[13px] font-[family-name:var(--font-nunito)] animate-fade-in">
+                          <div className="bg-[rgb(15,23,42)] border border-[rgb(75,85,99)] rounded-lg p-3 flex flex-col gap-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-400 font-sans">Tài khoản đăng nhập:</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-white font-mono font-bold select-all">{acc.login_username}</span>
+                                <button
+                                  onClick={() => copyHistoryToClipboard(acc.login_username || "", `user-${acc.id}`)}
+                                  className="text-[rgb(251,191,36)] hover:text-white text-[12px] cursor-pointer"
+                                >
+                                  {copiedHistory[`user-${acc.id}`] ? "Đã chép" : "Copy"}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-400 font-sans">Mật khẩu:</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-white font-mono font-bold select-all">{acc.login_password}</span>
+                                <button
+                                  onClick={() => copyHistoryToClipboard(acc.login_password || "", `pass-${acc.id}`)}
+                                  className="text-[rgb(251,191,36)] hover:text-white text-[12px] cursor-pointer"
+                                >
+                                  {copiedHistory[`pass-${acc.id}`] ? "Đã chép" : "Copy"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
-import { createSession, deleteSession } from "@/lib/session";
+import { createSession, deleteSession, getSession } from "@/lib/session";
 import { checkRateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { RowDataPacket } from "mysql2";
 
@@ -164,3 +164,22 @@ export async function logoutAction() {
   await deleteSession();
   redirect("/login");
 }
+
+export async function getBalanceAction(): Promise<{ balance?: number; error?: string }> {
+  try {
+    const session = await getSession();
+    if (!session) return { error: "Not logged in" };
+
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT balance FROM users WHERE id = ? LIMIT 1",
+      [session.userId]
+    );
+
+    if (rows.length === 0) return { error: "User not found" };
+    return { balance: Number(rows[0].balance) };
+  } catch (err) {
+    console.error("Get balance error:", err);
+    return { error: "System error" };
+  }
+}
+

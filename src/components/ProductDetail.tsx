@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { buyAccountAction } from "@/app/actions/purchase";
+import { getBalanceAction } from "@/app/actions/auth";
 
 interface ProductDetailProps {
   productId: number;
@@ -33,9 +34,12 @@ export function ProductDetail({
   extraInfo,
   isOutOfStock = false
 }: ProductDetailProps) {
+  const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "MB";
+  const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "0338180818";
+
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<"select" | "qr" | "zalo" | "buy-confirm" | "success">("select");
-  
+
   // Trạng thái mua hàng
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState<string | null>(null);
@@ -47,23 +51,59 @@ export function ProductDetail({
   const [copiedPass, setCopiedPass] = useState(false);
   const [copiedBankInfo, setCopiedBankInfo] = useState({ stk: false, amount: false, content: false });
 
-  const handleBuy = async () => {
+  const handleBuy = useCallback(async () => {
     setBuying(true);
     setBuyError(null);
     try {
       const res = await buyAccountAction(productId);
       if (res.error) {
         setBuyError(res.error);
+        return { error: res.error };
       } else if (res.success && res.account) {
         setPurchasedAccount(res.account);
         setModalMode("success");
+        return { success: true };
       }
     } catch (err) {
       setBuyError("Đã xảy ra lỗi kết nối. Vui lòng thử lại.");
+      return { error: "Đã xảy ra lỗi kết nối. Vui lòng thử lại." };
     } finally {
       setBuying(false);
     }
-  };
+  }, [productId]);
+
+  // Polling for balance update when QR modal is shown
+  useEffect(() => {
+    if (modalMode !== "qr" || !currentUser) return;
+
+    let isSubscribed = true;
+    const initialBalance = currentUser.balance;
+
+    const checkBalance = async () => {
+      try {
+        const res = await getBalanceAction();
+        if (!isSubscribed) return;
+
+        if (res.balance !== undefined && res.balance > initialBalance) {
+          const buyResult = await handleBuy();
+          if (buyResult && buyResult.error) {
+            setBuyError(`Lỗi tự động mua tài khoản: ${buyResult.error}. Vui lòng thử lại thủ công.`);
+            setModalMode("select");
+          }
+        }
+      } catch (err) {
+        console.error("Error checking balance:", err);
+      }
+    };
+
+    // Check every 3 seconds
+    const interval = setInterval(checkBalance, 3000);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(interval);
+    };
+  }, [modalMode, currentUser, handleBuy]);
 
   const copyToClipboard = (text: string, type: "zalo" | "user" | "pass" | "stk" | "amount" | "content") => {
     navigator.clipboard.writeText(text);
@@ -189,8 +229,26 @@ export function ProductDetail({
         </div>
       ) : showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-5 max-w-[380px] w-full animate-fade-in-up max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+          <div className="relative bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-5 max-w-[380px] w-full animate-fade-in-up max-h-[90vh] overflow-y-auto no-scrollbar" onClick={e => e.stopPropagation()}>
             
+            {/* Loading Overlay */}
+            {buying && (
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-xs flex flex-col items-center justify-center rounded-2xl z-[100] p-6 text-center animate-fade-in">
+                <div className="relative w-12 h-12 mb-4 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full border-4 border-[rgb(251,191,36)]/20"></span>
+                  <span className="absolute inset-0 rounded-full border-4 border-t-[rgb(251,191,36)] animate-spin"></span>
+                </div>
+                <p className="text-[rgb(251,191,36)] font-bold text-[15px] mb-1 font-sans">
+                  {modalMode === "qr" ? "Đã nhận được tiền nạp!" : "Đang xử lý giao dịch..."}
+                </p>
+                <p className="text-gray-300 text-[13px] font-sans">
+                  {modalMode === "qr" 
+                    ? "Hệ thống đang tiến hành mua tài khoản tự động..." 
+                    : "Vui lòng chờ trong giây lát, không đóng cửa sổ này."}
+                </p>
+              </div>
+            )}
+
             {/* MODE: SELECT */}
             {modalMode === "select" && (
               <>
@@ -203,24 +261,29 @@ export function ProductDetail({
                       href="/login"
                       className="w-full py-3 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[16px] rounded-lg text-center transition-colors"
                     >
-                      🔑 Đăng nhập ngay
+                      Đăng nhập ngay
                     </Link>
                     <div className="border-t border-[rgb(75,85,99)] pt-3 mt-1">
                       <button 
                         onClick={() => setModalMode("zalo")}
                         className="w-full py-2.5 bg-transparent border border-[#0068FF] text-[#0068FF] hover:bg-[rgba(0,104,255,0.1)] font-semibold text-[14px] rounded-lg transition-colors"
                       >
-                        💬 Mua thủ công qua Zalo
+                        Mua thủ công qua Zalo
                       </button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-4">
+                    {buyError && (
+                      <div className="bg-[rgba(220,38,38,0.1)] border border-[rgba(220,38,38,0.3)] p-3 rounded-lg text-center font-sans animate-fade-in">
+                        <p className="text-[rgb(248,113,113)] text-[12px]">{buyError}</p>
+                      </div>
+                    )}
                     <div className="bg-[rgb(15,23,42)] p-3.5 rounded-xl border border-[rgb(75,85,99)] flex justify-between items-center font-[family-name:var(--font-nunito)]">
                       <span className="text-[rgba(238,238,238,0.6)] text-[13px]">Số dư tài khoản:</span>
                       <span className="text-[rgb(251,191,36)] font-bold text-[18px]">{currentUser.balance.toLocaleString("vi-VN")}đ</span>
                     </div>
-
+ 
                     {currentUser.balance >= price ? (
                       <button 
                         onClick={() => {
@@ -229,7 +292,7 @@ export function ProductDetail({
                         }}
                         className="w-full flex items-center justify-center gap-2 py-3.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[16px] rounded-lg transition-colors cursor-pointer shadow-[0_0_15px_rgba(251,191,36,0.2)]"
                       >
-                        ⚡ Mua Bằng Số Dư (Nhận Acc Ngay)
+                        Mua Bằng Số Dư (Nhận Acc Ngay)
                       </button>
                     ) : (
                       <div className="flex flex-col gap-2.5">
@@ -237,26 +300,29 @@ export function ProductDetail({
                           <p className="text-[rgb(248,113,113)] text-[13px]">Số dư không đủ! Thiếu {(price - currentUser.balance).toLocaleString("vi-VN")}đ</p>
                         </div>
                         <button 
-                          onClick={() => setModalMode("qr")}
+                          onClick={() => {
+                            setBuyError(null);
+                            setModalMode("qr");
+                          }}
                           className="w-full flex items-center justify-center gap-2 py-3 bg-[rgb(124,58,237)] hover:bg-[rgb(139,92,246)] text-white font-bold text-[15px] rounded-lg transition-colors cursor-pointer"
                         >
-                          🏦 Chuyển Khoản Nạp Động (SePay)
+                          Chuyển Khoản Nạp Động (SePay)
                         </button>
                         <Link
                           href="/profile"
                           className="w-full py-2.5 bg-transparent border border-gray-600 hover:border-gray-400 text-gray-400 hover:text-gray-200 font-medium text-[13px] rounded-lg text-center transition-colors"
                         >
-                          💳 Đến Trang Nạp Tiền
+                          Đến Trang Nạp Tiền
                         </Link>
                       </div>
                     )}
-
+ 
                     <div className="border-t border-[rgb(75,85,99)] pt-3 mt-1">
                       <button 
                         onClick={() => setModalMode("zalo")}
                         className="w-full flex items-center justify-center gap-2 py-2.5 bg-[rgb(31,41,55)] hover:bg-[rgb(55,65,81)] border border-gray-700 text-white font-medium text-[14px] rounded-lg transition-colors cursor-pointer"
                       >
-                        💬 Liên hệ Zalo: 0338180818
+                        Liên hệ Zalo: 0338180818
                       </button>
                     </div>
                   </div>
@@ -313,7 +379,7 @@ export function ProductDetail({
                     disabled={buying}
                     className="mt-3 w-full py-3 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] disabled:bg-[rgb(107,114,128)] disabled:cursor-not-allowed text-black font-bold text-[16px] rounded-lg transition-colors cursor-pointer"
                   >
-                    {buying ? "Đang xử lý giao dịch..." : "✔️ XÁC NHẬN THANH TOÁN"}
+                    {buying ? "Đang xử lý giao dịch..." : "XÁC NHẬN THANH TOÁN"}
                   </button>
                 </div>
               </>
@@ -359,7 +425,7 @@ export function ProductDetail({
 
                   <div className="bg-[rgba(251,191,36,0.05)] border border-[rgba(251,191,36,0.2)] p-3 rounded-lg mt-4 text-left">
                     <p className="text-[rgb(253,230,138)] text-[11px] leading-relaxed font-sans">
-                      💡 <strong>Lưu ý:</strong> Bạn có thể vào mục <strong>Lịch sử mua hàng</strong> trên trang cá nhân để xem lại thông tin đăng nhập này bất cứ lúc nào.
+                      <strong>Lưu ý:</strong> Bạn có thể vào mục <strong>Lịch sử mua hàng</strong> trên trang cá nhân để xem lại thông tin đăng nhập này bất cứ lúc nào.
                     </p>
                   </div>
 
@@ -395,7 +461,7 @@ export function ProductDetail({
 
                   <div className="bg-white rounded-xl p-2.5 mb-3 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                     <img
-                      src={`https://img.vietqr.io/image/MB-0338180818-compact.png?amount=${price - currentUser.balance}&addInfo=BOMRAU%20NAP%20${currentUser.id}`}
+                      src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${price - currentUser.balance}&addInfo=BOMRAU%20NAP%20${currentUser.id}`}
                       alt="VietQR SePay"
                       className="w-[180px] h-[180px] object-contain"
                     />
@@ -404,15 +470,15 @@ export function ProductDetail({
                   <div className="w-full flex flex-col gap-1.5 text-[13px] font-[family-name:var(--font-nunito)]">
                     <div className="flex justify-between py-1.5 border-b border-[rgb(75,85,99)]">
                       <span className="text-[rgba(238,238,238,0.7)] text-[12px] font-sans">Ngân hàng:</span>
-                      <span className="text-white font-bold">MB Bank (Quân Đội)</span>
+                      <span className="text-white font-bold">{bankName === "MB" ? "MB Bank (Quân Đội)" : bankName}</span>
                     </div>
                     
                     <div className="flex justify-between py-1.5 border-b border-[rgb(75,85,99)]">
                       <span className="text-[rgba(238,238,238,0.7)] text-[12px] font-sans">Số tài khoản:</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-white font-bold">0338180818</span>
+                        <span className="text-white font-bold">{bankAccount}</span>
                         <button 
-                          onClick={() => copyToClipboard("0338180818", "stk")}
+                          onClick={() => copyToClipboard(bankAccount, "stk")}
                           className="text-[rgb(251,191,36)] text-[11px] font-sans cursor-pointer hover:underline"
                         >
                           {copiedBankInfo.stk ? "Đã chép" : "Copy"}
@@ -449,7 +515,7 @@ export function ProductDetail({
 
                   <div className="bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)] p-2.5 rounded-lg mt-3 text-left w-full">
                     <p className="text-[rgb(74,222,128)] text-[11px] leading-relaxed font-sans">
-                      ⚠️ <strong>Lưu ý quan trọng:</strong> Bạn phải điền chính xác nội dung chuyển khoản <strong>BOMRAU NAP {currentUser.id}</strong> để hệ thống tự động nhận dạng giao dịch và cộng tiền sau 1 phút. Khi được cộng tiền, bạn chỉ cần bấm "Thanh toán bằng số dư" để lấy tài khoản ngay!
+                      <strong>Lưu ý quan trọng:</strong> Bạn phải điền chính xác nội dung chuyển khoản <strong>BOMRAU NAP {currentUser.id}</strong> để hệ thống tự động nhận dạng giao dịch và cộng tiền sau 1 phút. Khi được cộng tiền, bạn chỉ cần bấm "Thanh toán bằng số dư" để lấy tài khoản ngay!
                     </p>
                   </div>
 
@@ -460,7 +526,7 @@ export function ProductDetail({
                     }} 
                     className="mt-4 w-full py-2.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[14px] rounded-lg transition-colors cursor-pointer"
                   >
-                    Tôi đã chuyển khoản (Đóng & Reload)
+                    Đóng
                   </button>
                 </div>
               </>
