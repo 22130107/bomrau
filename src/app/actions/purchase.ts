@@ -4,6 +4,7 @@ import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
+import { headers } from "next/headers";
 
 export async function buyAccountAction(productId: number) {
   try {
@@ -70,11 +71,26 @@ export async function buyAccountAction(productId: number) {
         [account.id]
       );
 
+      // 6.5. Xác định NPP và tên miền mua hàng
+      const headersList = await headers();
+      const host = headersList.get("host") || "";
+      let distributorId: number | null = null;
+      if (host) {
+        const domainName = host.split(":")[0];
+        const [distributors] = await connection.query<RowDataPacket[]>(
+          "SELECT id FROM distributors WHERE domain = ? AND is_active = 1 LIMIT 1",
+          [domainName]
+        );
+        if (distributors.length > 0) {
+          distributorId = distributors[0].id;
+        }
+      }
+
       // 7. Tạo đơn hàng mới
       const [orderResult] = await connection.query(
-        `INSERT INTO orders (user_id, product_id, account_id, amount, status)
-         VALUES (?, ?, ?, ?, 'completed')`,
-        [userId, productId, account.id, price]
+        `INSERT INTO orders (user_id, product_id, account_id, distributor_id, amount, status, domain_purchased)
+         VALUES (?, ?, ?, ?, ?, 'completed', ?)`,
+        [userId, productId, account.id, distributorId, price, host]
       );
       const orderId = (orderResult as any).insertId;
 
