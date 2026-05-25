@@ -6,6 +6,8 @@ import { createProductAction, updateProductAction, deleteProductAction, ProductF
 import { createAccountAction, updateAccountAction, deleteAccountAction, AccountFormData } from "@/app/actions/account";
 import { uploadImageAction } from "@/app/actions/cloudinary";
 import { createNotificationAction, updateNotificationAction, deleteNotificationAction } from "@/app/actions/notification";
+import { createDistributorAction, updateDistributorAction, toggleDistributorStatusAction, DistributorFormData } from "@/app/actions/distributor";
+import { toggleUserLockAction, getUserDetailAction } from "@/app/actions/admin-user";
 
 export interface AdminNotification {
   id: number;
@@ -147,6 +149,18 @@ export function AdminContent({
   const [showAddNotification, setShowAddNotification] = useState(false);
   const [editingNotificationId, setEditingNotificationId] = useState<number | null>(null);
   const [notificationForm, setNotificationForm] = useState({ title: "", content: "", image_url: "", is_pinned: false, is_active: true });
+
+  // States cho Nhà phân phối
+  const [showAddDistributor, setShowAddDistributor] = useState(false);
+  const [editingDistributorId, setEditingDistributorId] = useState<number | null>(null);
+  const [distributorForm, setDistributorForm] = useState<DistributorFormData>({
+    name: "", domain: "", phone: "", email: "", address: "", contact_info: ""
+  });
+
+  // States cho User detail
+  const [showUserDetail, setShowUserDetail] = useState(false);
+  const [selectedUserDetail, setSelectedUserDetail] = useState<{ id: number; username: string; email: string | null; balance: number; role: string; is_active: boolean; joinDate: string } | null>(null);
+  const [selectedUserOrders, setSelectedUserOrders] = useState<{ id: number; product: string; amount: number; status: string; date: string }[]>([]);
 
   // Cloudinary image upload states and handlers
   const [isUploadingProduct, setIsUploadingProduct] = useState(false);
@@ -595,8 +609,17 @@ export function AdminContent({
             <div className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
               <h4 className="text-white font-bold text-[14px] mb-3">{editingCategoryId ? "Sửa danh mục" : "Thêm danh mục mới"}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên danh mục *</label><input type="text" value={categoryForm.name} onChange={e => setCategoryForm({...categoryForm, name: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Slug (URL) *</label><input type="text" value={categoryForm.slug} onChange={e => setCategoryForm({...categoryForm, slug: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên danh mục *</label><input type="text" value={categoryForm.name} onChange={e => {
+                  const name = e.target.value;
+                  const slug = name
+                    .toLowerCase()
+                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    .replace(/[^a-z0-9\s-]/g, "")
+                    .replace(/\s+/g, "-")
+                    .replace(/-+/g, "-")
+                    .replace(/^-|-$/g, "");
+                  setCategoryForm({...categoryForm, name, slug});
+                }} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Mô tả</label><input type="text" value={categoryForm.description} onChange={e => setCategoryForm({...categoryForm, description: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1 md:col-span-2 border-t border-[rgba(238,238,238,0.1)] pt-3 mt-1">
                   <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Ảnh danh mục</label>
@@ -721,8 +744,48 @@ export function AdminContent({
         <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">Nhà phân phối</h3>
-            <button className="px-3 md:px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] md:text-[14px] rounded-lg transition-colors">+ Thêm NPP</button>
+            <button onClick={() => {
+              setShowAddDistributor(true);
+              setEditingDistributorId(null);
+              setDistributorForm({ name: "", domain: "", phone: "", email: "", address: "", contact_info: "" });
+            }} className="px-3 md:px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] md:text-[14px] rounded-lg transition-colors">+ Thêm NPP</button>
           </div>
+
+          {showAddDistributor && (
+            <div className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+              <h4 className="text-[rgb(251,191,36)] font-bold text-[16px] mb-4">{editingDistributorId ? "Sửa NPP" : "Thêm NPP mới"}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên NPP *</label><input type="text" value={distributorForm.name} onChange={e => setDistributorForm({...distributorForm, name: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên miền *</label><input type="text" placeholder="VD: tftstore.vn" value={distributorForm.domain} onChange={e => setDistributorForm({...distributorForm, domain: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">SĐT</label><input type="text" value={distributorForm.phone || ""} onChange={e => setDistributorForm({...distributorForm, phone: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Email</label><input type="email" value={distributorForm.email || ""} onChange={e => setDistributorForm({...distributorForm, email: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Địa chỉ</label><input type="text" value={distributorForm.address || ""} onChange={e => setDistributorForm({...distributorForm, address: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Thông tin liên hệ bổ sung</label><input type="text" value={distributorForm.contact_info || ""} onChange={e => setDistributorForm({...distributorForm, contact_info: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button
+                  disabled={isPending}
+                  onClick={() => {
+                    startTransition(async () => {
+                      const res = editingDistributorId
+                        ? await updateDistributorAction(editingDistributorId, distributorForm)
+                        : await createDistributorAction(distributorForm);
+                      if (res.error) alert(res.error);
+                      else {
+                        alert(editingDistributorId ? "Sửa thành công!" : "Thêm thành công!");
+                        setShowAddDistributor(false);
+                      }
+                    });
+                  }}
+                  className="px-5 py-2 bg-[rgb(34,197,94)] hover:bg-[rgb(22,163,74)] text-white font-bold text-[14px] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isPending ? "Đang lưu..." : "Lưu NPP"}
+                </button>
+                <button onClick={() => setShowAddDistributor(false)} className="px-5 py-2 bg-[rgb(75,85,99)] hover:bg-[rgb(107,114,128)] text-white font-bold text-[14px] rounded-lg transition-colors disabled:opacity-50" disabled={isPending}>Hủy</button>
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
               <thead><tr className="border-b border-[rgb(75,85,99)]">
@@ -745,7 +808,43 @@ export function AdminContent({
                     <td className="py-3 hidden md:table-cell"><span className="text-[rgb(59,130,246)]">{d.domain}</span></td>
                     <td className="py-3 text-white font-bold">{d.totalSupplied} acc</td>
                     <td className="py-3"><span className={`px-2 py-1 rounded text-[11px] font-bold ${d.is_active ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]"}`}>{d.is_active ? "Hoạt động" : "Ngừng"}</span></td>
-                    <td className="py-3"><div className="flex gap-1"><button className="px-2 py-1 bg-[rgb(59,130,246)] text-white text-[11px] rounded">Sửa</button><button className="px-2 py-1 bg-[rgb(220,38,38)] text-white text-[11px] rounded">Khóa</button></div></td>
+                    <td className="py-3">
+                      <div className="flex gap-1">
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            setDistributorForm({
+                              name: d.name,
+                              domain: d.domain,
+                              phone: d.phone,
+                              email: d.email,
+                              address: "",
+                              contact_info: "",
+                            });
+                            setEditingDistributorId(d.id);
+                            setShowAddDistributor(true);
+                          }}
+                          className="px-2 py-1 bg-[rgb(59,130,246)] text-white text-[11px] rounded disabled:opacity-50"
+                        >
+                          Sửa
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            const action = d.is_active ? "khóa" : "mở khóa";
+                            if (confirm(`Bạn có chắc chắn muốn ${action} NPP "${d.name}"?`)) {
+                              startTransition(async () => {
+                                const res = await toggleDistributorStatusAction(d.id);
+                                if (res.error) alert(res.error);
+                              });
+                            }
+                          }}
+                          className="px-2 py-1 bg-[rgb(220,38,38)] text-white text-[11px] rounded disabled:opacity-50"
+                        >
+                          {d.is_active ? "Khóa" : "Mở"}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -758,6 +857,55 @@ export function AdminContent({
       {activeTab === "users" && (
         <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
           <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold mb-4">Người dùng</h3>
+
+          {/* User Detail Modal */}
+          {showUserDetail && selectedUserDetail && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowUserDetail(false)}>
+              <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-[rgb(251,191,36)] text-[20px] font-bold">Chi tiết người dùng</h4>
+                  <button onClick={() => setShowUserDetail(false)} className="text-white hover:text-[rgb(251,191,36)] text-[20px]">&times;</button>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-[rgb(17,24,39)] rounded-lg">
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">ID:</span><p className="text-white font-bold">#{selectedUserDetail.id}</p></div>
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">Username:</span><p className="text-[rgb(251,191,36)] font-bold">{selectedUserDetail.username}</p></div>
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">Email:</span><p className="text-white">{selectedUserDetail.email || "N/A"}</p></div>
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">Số dư:</span><p className="text-[rgb(34,197,94)] font-bold">{selectedUserDetail.balance.toLocaleString("vi-VN")}đ</p></div>
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">Vai trò:</span><p className="text-white">{selectedUserDetail.role}</p></div>
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">Ngày tham gia:</span><p className="text-white">{selectedUserDetail.joinDate}</p></div>
+                  <div><span className="text-[rgba(238,238,238,0.6)] text-[12px]">Trạng thái:</span><p className={selectedUserDetail.is_active ? "text-[rgb(34,197,94)]" : "text-[rgb(220,38,38)]"}>{selectedUserDetail.is_active ? "Hoạt động" : "Đã khóa"}</p></div>
+                </div>
+                <h5 className="text-[rgb(251,191,36)] font-bold text-[14px] mb-2">Lịch sử đơn hàng ({selectedUserOrders.length})</h5>
+                {selectedUserOrders.length === 0 ? (
+                  <p className="text-[rgba(238,238,238,0.5)] italic text-[13px]">Chưa có đơn hàng nào.</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[12px]">
+                      <thead><tr className="border-b border-[rgb(75,85,99)]">
+                        <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">ID</th>
+                        <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Sản phẩm</th>
+                        <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Giá</th>
+                        <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Ngày</th>
+                        <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Trạng thái</th>
+                      </tr></thead>
+                      <tbody>
+                        {selectedUserOrders.map(o => (
+                          <tr key={o.id} className="border-b border-[rgb(55,65,81)]">
+                            <td className="py-2 text-white">#{o.id}</td>
+                            <td className="py-2 text-[rgb(251,191,36)]">{o.product}</td>
+                            <td className="py-2 text-white">{o.amount.toLocaleString("vi-VN")}đ</td>
+                            <td className="py-2 text-white">{o.date}</td>
+                            <td className="py-2"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${o.status === "completed" ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : o.status === "pending" ? "bg-[rgba(251,191,36,0.2)] text-[rgb(251,191,36)]" : "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]"}`}>{o.status}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
               <thead><tr className="border-b border-[rgb(75,85,99)]">
@@ -778,7 +926,42 @@ export function AdminContent({
                     <td className="py-3 text-white">{u.balance.toLocaleString("vi-VN")}đ</td>
                     <td className="py-3 text-white hidden md:table-cell">{u.joinDate}</td>
                     <td className="py-3 text-white font-bold">{u.totalPurchased}</td>
-                    <td className="py-3"><div className="flex gap-1"><button className="px-2 py-1 bg-[rgb(59,130,246)] text-white text-[11px] rounded">Xem</button><button className="px-2 py-1 bg-[rgb(220,38,38)] text-white text-[11px] rounded">Khóa</button></div></td>
+                    <td className="py-3">
+                      <div className="flex gap-1">
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              const res = await getUserDetailAction(u.id);
+                              if (res.error) alert(res.error);
+                              else if (res.user && res.orders) {
+                                setSelectedUserDetail(res.user);
+                                setSelectedUserOrders(res.orders);
+                                setShowUserDetail(true);
+                              }
+                            });
+                          }}
+                          className="px-2 py-1 bg-[rgb(59,130,246)] text-white text-[11px] rounded disabled:opacity-50"
+                        >
+                          Xem
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            const action = "khóa";
+                            if (confirm(`Bạn có chắc chắn muốn khóa tài khoản "${u.username}"? Người dùng này sẽ không thể đăng nhập.`)) {
+                              startTransition(async () => {
+                                const res = await toggleUserLockAction(u.id);
+                                if (res.error) alert(res.error);
+                              });
+                            }
+                          }}
+                          className="px-2 py-1 bg-[rgb(220,38,38)] text-white text-[11px] rounded disabled:opacity-50"
+                        >
+                          Khóa
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>

@@ -1,13 +1,92 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { searchAction, SearchResult } from "@/app/actions/search";
+
 export function SearchBar() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleChange = (value: string) => {
+    setQuery(value);
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    if (value.trim().length < 1) {
+      setResults([]);
+      setIsOpen(false);
+      return;
+    }
+
+    timerRef.current = setTimeout(async () => {
+      setLoading(true);
+      const data = await searchAction(value);
+      setResults(data);
+      setIsOpen(data.length > 0);
+      setLoading(false);
+    }, 300);
+  };
+
   return (
-    <div className="w-[185px] md:w-auto md:flex-1 md:max-w-[300px]">
-      <input
-        type="text"
-        placeholder="Nhập tên pet để tìm kiếm..."
-        className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-[rgb(31,41,55)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] md:text-[14px] outline-none focus:border-[rgb(251,191,36)] transition-colors placeholder:text-[rgba(238,238,238,0.4)]"
-      />
+    <div ref={wrapperRef} className="w-[185px] md:w-auto md:flex-1 md:max-w-[300px] relative">
+      <div className="relative">
+        <input
+          type="text"
+          value={query}
+          onChange={e => handleChange(e.target.value)}
+          onFocus={() => { if (results.length > 0) setIsOpen(true); }}
+          placeholder="Nhập tên pet để tìm kiếm..."
+          className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-[rgb(31,41,55)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] md:text-[14px] outline-none focus:border-[rgb(251,191,36)] transition-colors placeholder:text-[rgba(238,238,238,0.4)]"
+        />
+        {loading && (
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <svg className="animate-spin h-4 w-4 text-[rgb(251,191,36)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl overflow-hidden z-[9999] shadow-xl animate-fade-in">
+          {results.map(r => (
+            <Link
+              key={r.id}
+              href={`/category/${r.category_slug}/detail.html?id=${r.id}`}
+              onClick={() => { setIsOpen(false); setQuery(""); }}
+              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgb(31,41,55)] transition-colors border-b border-[rgba(255,255,255,0.05)] last:border-b-0"
+            >
+              <div className="w-10 h-10 rounded-lg border border-[rgb(75,85,99)] overflow-hidden bg-[rgb(17,24,39)] shrink-0 flex items-center justify-center">
+                {r.image_url ? (
+                  <img src={r.image_url} alt={r.title} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[rgb(251,191,36)] text-[16px] font-bold">?</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-[13px] font-semibold truncate">{r.title}</p>
+                <p className="text-[rgb(251,191,36)] text-[12px] font-bold">{r.price.toLocaleString("vi-VN")}đ</p>
+              </div>
+              <span className="text-[rgba(238,238,238,0.4)] text-[11px]">{r.category_name}</span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

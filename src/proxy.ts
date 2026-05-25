@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { decrypt } from "@/lib/session";
+import { decrypt, encrypt } from "@/lib/session";
+
+// Session refresh threshold: refresh if less than 5 minutes remaining
+const SESSION_DURATION_MS = 10 * 60 * 1000;
+const REFRESH_THRESHOLD_MS = 5 * 60 * 1000;
 
 // Routes that require login
 const protectedRoutes = ["/profile", "/admin", "/npp"];
@@ -12,13 +16,38 @@ export async function proxy(request: NextRequest) {
 
   const sessionCookie = request.cookies.get("session")?.value;
   const session = await decrypt(sessionCookie);
-  const isLoggedIn = !!session && new Date(session.expiresAt) > new Date();
+  const now = new Date();
+  const isLoggedIn = !!session && new Date(session.expiresAt) > now;
 
   // If session exists but is expired, delete cookie
   if (sessionCookie && !isLoggedIn) {
     const response = NextResponse.redirect(new URL("/login", request.url));
     response.cookies.delete("session");
     return response;
+  }
+
+  // Auto-refresh session if logged in and less than 5 min remaining
+  if (isLoggedIn && session) {
+    const expiresAt = new Date(session.expiresAt);
+    const msRemaining = expiresAt.getTime() - now.getTime();
+    if (msRemaining < REFRESH_THRESHOLD_MS) {
+      const newExpiresAt = new Date(now.getTime() + SESSION_DURATION_MS);
+      const newSession = await encrypt({
+        userId: session.userId,
+        username: session.username,
+        role: session.role,
+        expiresAt: newExpiresAt,
+      });
+      const response = NextResponse.next();
+      response.cookies.set("session", newSession, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        expires: newExpiresAt,
+        sameSite: "lax",
+        path: "/",
+      });
+      return response;
+    }
   }
 
   // Redirect unauthenticated users from protected routes

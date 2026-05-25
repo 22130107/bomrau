@@ -6,11 +6,14 @@ BomRauTFT là website mua bán tài khoản (nick) game Teamfight Tactics (TFT),
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router) — SSR/SSG cho SEO tốt
+- **Framework**: Next.js 16 (App Router) — SSR/SSG cho SEO tốt
 - **Frontend**: React 19, TypeScript
 - **Styling**: Tailwind CSS v4
-- **Upload ảnh**: Cloudinary (unsigned upload preset)
-- **State**: React useState (chưa có backend/database)
+- **Upload ảnh**: Cloudinary (signed upload via API key/secret)
+- **Backend**: MySQL (mysql2), Server Actions, JWT session
+- **Auth**: bcryptjs + jose (JWT), rate limiting, HTTP-only cookie
+- **Payment**: SePay webhook (auto top-up via bank transfer)
+- **State**: React useState + Server Components SSR
 - **Routing**: Next.js App Router (file-based routing)
 
 ## Cấu trúc trang
@@ -102,7 +105,9 @@ Mỗi NPP được Admin gán một **tên miền riêng** (VD: bomrautft.com, t
 
 ## Ghi chú
 
-- Hiện tại chưa có backend, tất cả data là demo (hardcoded)
-- Cloudinary config cần thay `your-cloud-name` và `your-upload-preset` trong AdminPage.tsx
+- Backend đầy đủ: MySQL (mysql2 + connection pool), Server Actions, SePay webhook tự động nạp tiền
+- Cloudinary config trong `src/app/actions/cloudinary.ts` dùng biến môi trường `CLOUDINARY_URL`
+- Session JWT hết hạn sau 10 phút, tự động refresh qua middleware khi còn dưới 5 phút
+- Dump database mới nhất tại `database/bomrautft.sql`
 - Liên hệ mua hàng qua Zalo: 0338180818 (Bờm Râu)
 - Social: Facebook + TikTok (footer)
