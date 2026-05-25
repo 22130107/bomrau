@@ -231,6 +231,22 @@ export function AdminContent({
     extra_info: "",
   });
 
+  // States cho lọc sản phẩm
+  const [productSearchTerm, setProductSearchTerm] = useState("");
+  const [productCategoryFilter, setProductCategoryFilter] = useState(0);
+  const [productStatusFilter, setProductStatusFilter] = useState<string>("all");
+
+  const filteredProducts = initialProducts.filter((p) => {
+    const matchesSearch = p.title
+      .toLowerCase()
+      .includes(productSearchTerm.toLowerCase());
+    const matchesCategory =
+      productCategoryFilter === 0 || p.category_id === productCategoryFilter;
+    const matchesStatus =
+      productStatusFilter === "all" || p.status === productStatusFilter;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
+
   // States cho Tài khoản
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
@@ -777,6 +793,40 @@ export function AdminContent({
               </div>
             </div>
           )}
+          {/* Filter bar cho sản phẩm */}
+          <div className="flex flex-wrap gap-2 mb-4 p-3 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+            <input
+              type="text"
+              placeholder="🔍 Tìm tên sản phẩm..."
+              value={productSearchTerm}
+              onChange={(e) => setProductSearchTerm(e.target.value)}
+              className="flex-1 min-w-[180px] px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            />
+            <select
+              value={productCategoryFilter}
+              onChange={(e) => setProductCategoryFilter(Number(e.target.value))}
+              className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            >
+              <option value={0}>Tất cả danh mục</option>
+              {initialCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={productStatusFilter}
+              onChange={(e) => setProductStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="available">Đang hiện</option>
+              <option value="hidden">Ẩn</option>
+            </select>
+            <span className="flex items-center text-[12px] text-[rgba(238,238,238,0.5)] whitespace-nowrap">
+              {filteredProducts.length}/{initialProducts.length} sản phẩm
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
               <thead>
@@ -808,7 +858,14 @@ export function AdminContent({
                 </tr>
               </thead>
               <tbody>
-                {initialProducts.map((p) => (
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
+                      Không tìm thấy sản phẩm phù hợp.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredProducts.map((p) => (
                   <tr key={p.id} className="border-b border-[rgb(55,65,81)]">
                     <td className="py-3 text-white">#{p.id}</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">
@@ -890,7 +947,7 @@ export function AdminContent({
                       </div>
                     </td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
