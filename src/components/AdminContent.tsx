@@ -154,7 +154,7 @@ export function AdminContent({
   const [showAddDistributor, setShowAddDistributor] = useState(false);
   const [editingDistributorId, setEditingDistributorId] = useState<number | null>(null);
   const [distributorForm, setDistributorForm] = useState<DistributorFormData>({
-    name: "", domain: "", phone: "", email: "", address: "", contact_info: ""
+    name: "", domain: "", phone: "", email: "", address: "", contact_info: "", username: "", password: ""
   });
 
   // States cho User detail
@@ -747,7 +747,7 @@ export function AdminContent({
             <button onClick={() => {
               setShowAddDistributor(true);
               setEditingDistributorId(null);
-              setDistributorForm({ name: "", domain: "", phone: "", email: "", address: "", contact_info: "" });
+              setDistributorForm({ name: "", domain: "", phone: "", email: "", address: "", contact_info: "", username: "", password: "" });
             }} className="px-3 md:px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] md:text-[14px] rounded-lg transition-colors">+ Thêm NPP</button>
           </div>
 
@@ -757,6 +757,18 @@ export function AdminContent({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên NPP *</label><input type="text" value={distributorForm.name} onChange={e => setDistributorForm({...distributorForm, name: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên miền *</label><input type="text" placeholder="VD: tftstore.vn" value={distributorForm.domain} onChange={e => setDistributorForm({...distributorForm, domain: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+
+                {!editingDistributorId && (
+                  <>
+                    <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên đăng nhập *</label><input type="text" placeholder="Tên đăng nhập cho NPP" value={distributorForm.username || ""} onChange={e => setDistributorForm({...distributorForm, username: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                    <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Mật khẩu *</label><input type="password" placeholder="Mật khẩu đăng nhập" value={distributorForm.password || ""} onChange={e => setDistributorForm({...distributorForm, password: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                  </>
+                )}
+
+                {editingDistributorId && (
+                  <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Mật khẩu mới (để trống nếu không đổi)</label><input type="password" placeholder="Nhập nếu muốn đổi mật khẩu" value={distributorForm.password || ""} onChange={e => setDistributorForm({...distributorForm, password: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                )}
+
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">SĐT</label><input type="text" value={distributorForm.phone || ""} onChange={e => setDistributorForm({...distributorForm, phone: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Email</label><input type="email" value={distributorForm.email || ""} onChange={e => setDistributorForm({...distributorForm, email: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Địa chỉ</label><input type="text" value={distributorForm.address || ""} onChange={e => setDistributorForm({...distributorForm, address: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
