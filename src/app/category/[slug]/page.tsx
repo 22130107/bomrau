@@ -26,7 +26,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
   const [products] = await pool.query<RowDataPacket[]>(`
     SELECT id, title as name, image_url, original_price as originalPrice, price, discount_percent as discount,
-           fake_sold_count, fake_remaining_count
+           fake_sold_count as sold, fake_remaining_count as remaining
     FROM products 
     WHERE category_id = ? AND status = 'available'
     ORDER BY id DESC
@@ -59,8 +59,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                     originalPrice={Number(product.originalPrice)}
                     discount={Number(product.discount)}
                     image={product.image_url || category.image_url}
-                    sold={Number(product.fake_sold_count) || undefined}
-                    remaining={Number(product.fake_remaining_count) || undefined}
+                    sold={Number(product.sold) || undefined}
+                    remaining={Number(product.remaining) || undefined}
                     href={`/category/${slug}/detail.html?id=${product.id}`}
                   />
                 ))}

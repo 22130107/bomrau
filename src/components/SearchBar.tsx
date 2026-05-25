@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { searchAction, SearchResult } from "@/app/actions/search";
 
 export function SearchBar() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -41,6 +43,13 @@ export function SearchBar() {
     }, 300);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && query.trim()) {
+      setIsOpen(false);
+      router.push(`/search?q=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
   return (
     <div ref={wrapperRef} className="w-[185px] md:w-auto md:flex-1 md:max-w-[300px] relative">
       <div className="relative">
@@ -48,8 +57,9 @@ export function SearchBar() {
           type="text"
           value={query}
           onChange={e => handleChange(e.target.value)}
+          onKeyDown={handleKeyDown}
           onFocus={() => { if (results.length > 0) setIsOpen(true); }}
-          placeholder="Nhập tên pet để tìm kiếm..."
+          placeholder="Tìm pet, sàn, chưởng..."
           className="w-full px-3 py-1.5 md:px-4 md:py-2 bg-[rgb(31,41,55)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] md:text-[14px] outline-none focus:border-[rgb(251,191,36)] transition-colors placeholder:text-[rgba(238,238,238,0.4)]"
         />
         {loading && (
@@ -85,6 +95,13 @@ export function SearchBar() {
               <span className="text-[rgba(238,238,238,0.4)] text-[11px]">{r.category_name}</span>
             </Link>
           ))}
+          <Link
+            href={`/search?q=${encodeURIComponent(query)}`}
+            onClick={() => { setIsOpen(false); }}
+            className="flex items-center justify-center px-3 py-2 bg-[rgb(31,41,55)] hover:bg-[rgb(55,65,81)] text-[rgb(251,191,36)] text-[12px] font-semibold transition-colors"
+          >
+            Xem tất cả kết quả →
+          </Link>
         </div>
       )}
     </div>

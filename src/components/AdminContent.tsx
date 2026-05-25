@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useEffect } from "react";
 import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from "@/app/actions/category";
 import { createProductAction, updateProductAction, deleteProductAction, ProductFormData } from "@/app/actions/product";
 import { createAccountAction, updateAccountAction, deleteAccountAction, AccountFormData } from "@/app/actions/account";
@@ -8,6 +8,8 @@ import { uploadImageAction } from "@/app/actions/cloudinary";
 import { createNotificationAction, updateNotificationAction, deleteNotificationAction } from "@/app/actions/notification";
 import { createDistributorAction, updateDistributorAction, toggleDistributorStatusAction, DistributorFormData } from "@/app/actions/distributor";
 import { toggleUserLockAction, getUserDetailAction } from "@/app/actions/admin-user";
+import { AutocompleteField } from "@/components/AutocompleteField";
+import { getAllProductOptions, createProductOption, updateProductOption, deleteProductOption, ProductOptionFull } from "@/app/actions/product-options";
 
 export interface AdminNotification {
   id: number;
@@ -117,10 +119,23 @@ export function AdminContent({
   initialOrders,
   initialNotifications,
 }: AdminContentProps) {
-  const [activeTab, setActiveTab] = useState<"stats" | "products" | "accounts" | "categories" | "distributors" | "users" | "orders" | "notifications">("stats");
+  const [activeTab, setActiveTab] = useState<"stats" | "products" | "accounts" | "categories" | "distributors" | "users" | "orders" | "notifications" | "options">("stats");
   
   // Trạng thái chung
   const [isPending, startTransition] = useTransition();
+
+  // States cho Product Options
+  const [allOptions, setAllOptions] = useState<ProductOptionFull[]>([]);
+  const [showAddOption, setShowAddOption] = useState(false);
+  const [editingOptionId, setEditingOptionId] = useState<number | null>(null);
+  const [optionType, setOptionType] = useState<"pet_tim" | "san_tim" | "chuong">("pet_tim");
+  const [optionName, setOptionName] = useState("");
+
+  useEffect(() => {
+    if (activeTab === "options") {
+      getAllProductOptions().then(setAllOptions);
+    }
+  }, [activeTab]);
 
   // States cho Sản phẩm
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -243,6 +258,7 @@ export function AdminContent({
     { key: "users", label: "Người dùng" },
     { key: "orders", label: "Đơn hàng" },
     { key: "notifications", label: "Thông báo" },
+    { key: "options", label: "Pet/Sàn/Chưởng" },
   ] as const;
 
   return (
@@ -332,12 +348,12 @@ export function AdminContent({
                     </div>
                   )}
                 </div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Giá bán thực tế (VNĐ) *</label><input type="number" value={productForm.price} onChange={e => setProductForm({...productForm, price: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Giá gốc / Gạch ngang (VNĐ)</label><input type="number" value={productForm.original_price} onChange={e => setProductForm({...productForm, original_price: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">% Giảm giá hiển thị label</label><input type="number" value={productForm.discount_percent} onChange={e => setProductForm({...productForm, discount_percent: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Giá gốc / Gạch ngang (VNĐ)</label><input type="number" value={productForm.original_price} onChange={e => { const v = Number(e.target.value); const p = productForm.price; setProductForm({...productForm, original_price: v, discount_percent: p > 0 && v > 0 ? Math.round((1 - p / v) * 100) : productForm.discount_percent }); }} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Giá bán thực tế (VNĐ) *</label><input type="number" value={productForm.price} onChange={e => { const p = Number(e.target.value); const o = productForm.original_price; setProductForm({...productForm, price: p, discount_percent: o > 0 && p > 0 ? Math.round((1 - p / o) * 100) : 0 }); }} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">% Giảm giá (tự động)</label><div className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-bold flex items-center">{productForm.discount_percent}%</div></div>
 
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Đã bán (Ảo)</label><input type="number" value={productForm.fake_sold_count} onChange={e => setProductForm({...productForm, fake_sold_count: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Còn lại (Ảo)</label><input type="number" value={productForm.fake_remaining_count} onChange={e => setProductForm({...productForm, fake_remaining_count: Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Đã bán <span className="text-[rgba(238,238,238,0.4)]">(để trống = tự động)</span></label><input type="number" min="0" placeholder="Tự động" value={productForm.fake_sold_count || ""} onChange={e => setProductForm({...productForm, fake_sold_count: e.target.value === "" ? 0 : Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Còn lại <span className="text-[rgba(238,238,238,0.4)]">(để trống = tự động)</span></label><input type="number" min="0" placeholder="Tự động" value={productForm.fake_remaining_count || ""} onChange={e => setProductForm({...productForm, fake_remaining_count: e.target.value === "" ? 0 : Number(e.target.value)})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
 
                 <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Trạng thái</label>
                   <select value={productForm.status} onChange={e => setProductForm({...productForm, status: e.target.value as "available"|"hidden"})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]">
@@ -350,9 +366,9 @@ export function AdminContent({
                 <div className="flex flex-col gap-1 md:col-span-3 border-t border-[rgba(238,238,238,0.2)] mt-2 pt-3">
                   <span className="text-[14px] text-[rgb(251,191,36)] font-bold">Thông tin chi tiết in-game (Tuỳ chọn)</span>
                 </div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Pet Tím</label><input type="text" placeholder="VD: Soraka Chuối Tí Nị" value={productForm.pet_tim || ""} onChange={e => setProductForm({...productForm, pet_tim: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Sàn Tím</label><input type="text" value={productForm.san_tim || ""} onChange={e => setProductForm({...productForm, san_tim: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
-                <div className="flex flex-col gap-1"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Chưởng</label><input type="text" value={productForm.chuong || ""} onChange={e => setProductForm({...productForm, chuong: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
+                <AutocompleteField label="Pet Tím" value={productForm.pet_tim} onChange={v => setProductForm({...productForm, pet_tim: v})} placeholder="VD: Soraka Chuối Tí Nị" optionType="pet_tim" />
+                <AutocompleteField label="Sàn Tím" value={productForm.san_tim} onChange={v => setProductForm({...productForm, san_tim: v})} optionType="san_tim" />
+                <AutocompleteField label="Chưởng" value={productForm.chuong} onChange={v => setProductForm({...productForm, chuong: v})} optionType="chuong" />
                 <div className="flex flex-col gap-1 md:col-span-3"><label className="text-[12px] text-[rgba(238,238,238,0.6)]">Extra Infor</label><input type="text" value={productForm.extra_info || ""} onChange={e => setProductForm({...productForm, extra_info: e.target.value})} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" /></div>
               </div>
 
@@ -386,6 +402,8 @@ export function AdminContent({
                 <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Tên Sản phẩm</th>
                 <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Giá bán</th>
                 <th className="text-left py-3 text-[rgba(238,238,238,0.6)] hidden md:table-cell">Danh mục</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Đã bán</th>
+                <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Còn</th>
                 <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Trạng thái</th>
                 <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Thao tác</th>
               </tr></thead>
@@ -396,6 +414,8 @@ export function AdminContent({
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">{p.title}</td>
                     <td className="py-3 text-white">{p.price.toLocaleString("vi-VN")}đ</td>
                     <td className="py-3 text-white hidden md:table-cell">{p.category_name}</td>
+                    <td className="py-3 text-[rgb(220,38,38)] font-bold">{p.fake_sold_count}</td>
+                    <td className="py-3 text-[rgb(34,197,94)] font-bold">{p.fake_remaining_count}</td>
                     <td className="py-3">
                       <span className={`px-2 py-1 rounded text-[11px] font-bold ${
                         p.status === "available" ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" :
@@ -1188,6 +1208,106 @@ export function AdminContent({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Options */}
+      {activeTab === "options" && (
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">Danh sách Pet Tím / Sàn Đấu / Chưởng</h3>
+            <button onClick={() => {
+              setShowAddOption(true);
+              setEditingOptionId(null);
+              setOptionType("pet_tim");
+              setOptionName("");
+            }} className="px-3 md:px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] md:text-[14px] rounded-lg transition-colors">+ Thêm</button>
+          </div>
+
+          {showAddOption && (
+            <div className="mb-6 p-4 md:p-6 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+              <h4 className="text-[rgb(251,191,36)] font-bold text-[16px] mb-4">{editingOptionId ? "Sửa" : "Thêm mới"}</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Loại</label>
+                  <select value={optionType} onChange={e => setOptionType(e.target.value as "pet_tim"|"san_tim"|"chuong")} disabled={!!editingOptionId} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)] disabled:opacity-50">
+                    <option value="pet_tim">Pet Tím</option>
+                    <option value="san_tim">Sàn Đấu</option>
+                    <option value="chuong">Chưởng</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">Tên {editingOptionId ? "mới" : ""}</label>
+                  <input type="text" placeholder="VD: Chibi Soraka - Chuối Tí Nị" value={optionName} onChange={e => setOptionName(e.target.value)} className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]" />
+                </div>
+                <div className="flex items-end gap-2">
+                  <button
+                    disabled={isPending}
+                    onClick={() => {
+                      startTransition(async () => {
+                        const res = editingOptionId
+                          ? await updateProductOption(editingOptionId, optionName)
+                          : await createProductOption(optionType, optionName);
+                        if (res.error) alert(res.error);
+                        else {
+                          setShowAddOption(false);
+                          setAllOptions(await getAllProductOptions());
+                        }
+                      });
+                    }}
+                    className="px-5 py-2 bg-[rgb(34,197,94)] hover:bg-[rgb(22,163,74)] text-white font-bold text-[14px] rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isPending ? "Đang lưu..." : "Lưu"}
+                  </button>
+                  <button onClick={() => setShowAddOption(false)} className="px-5 py-2 bg-[rgb(75,85,99)] hover:bg-[rgb(107,114,128)] text-white font-bold text-[14px] rounded-lg transition-colors disabled:opacity-50" disabled={isPending}>Hủy</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(["pet_tim", "san_tim", "chuong"] as const).map(type => {
+            const items = allOptions.filter(o => o.type === type);
+            const typeLabel = type === "pet_tim" ? "Pet Tím" : type === "san_tim" ? "Sàn Đấu" : "Chưởng";
+            return (
+              <div key={type} className="mb-4">
+                <h4 className="text-white font-bold text-[14px] mb-2 border-b border-[rgb(75,85,99)] pb-1">{typeLabel} ({items.length})</h4>
+                {items.length === 0 ? (
+                  <p className="text-[rgba(238,238,238,0.5)] italic text-[13px]">Chưa có dữ liệu</p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {items.map(o => (
+                      <div key={o.id} className="group flex items-center gap-1 px-2.5 py-1 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px]">
+                        <span>{o.name}</span>
+                        <button
+                          onClick={() => {
+                            setEditingOptionId(o.id);
+                            setOptionType(o.type as "pet_tim"|"san_tim"|"chuong");
+                            setOptionName(o.name);
+                            setShowAddOption(true);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-[rgb(59,130,246)] hover:text-[rgb(96,165,250)] text-[13px] ml-1 transition-opacity"
+                          title="Sửa"
+                        >✎</button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`Xóa "${o.name}"?`)) {
+                              startTransition(async () => {
+                                const res = await deleteProductOption(o.id);
+                                if (res.error) alert(res.error);
+                                else setAllOptions(await getAllProductOptions());
+                              });
+                            }
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-[rgb(220,38,38)] hover:text-[rgb(248,113,113)] text-[13px] transition-opacity"
+                          title="Xóa"
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

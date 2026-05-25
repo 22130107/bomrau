@@ -201,4 +201,20 @@ CREATE TABLE `users`  (
   INDEX `idx_users_google_id`(`google_id` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
 
+-- ----------------------------
+-- Table structure for product_attribute_options
+-- ----------------------------
+DROP TABLE IF EXISTS `product_attribute_options`;
+CREATE TABLE `product_attribute_options` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'pet_tim | san_tim | chuong',
+  `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `sort_order` int UNSIGNED NOT NULL DEFAULT 0,
+  `is_active` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_type`(`type` ASC) USING BTREE,
+  INDEX `idx_sort`(`type` ASC, `sort_order` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
+
 SET FOREIGN_KEY_CHECKS = 1;
