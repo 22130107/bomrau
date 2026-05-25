@@ -36,17 +36,17 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
                 {formatPrice(originalPrice)}
               </span>
             </div>
-            {(sold !== undefined || remaining !== undefined) && (
+            {(sold !== undefined && sold > 0) || (remaining !== undefined && remaining > 0) ? (
               <p className="text-center text-[10px] md:text-[14px] mt-1 md:mt-2 flex flex-col md:flex-row md:justify-center md:items-center gap-0.5 md:gap-0">
-                {sold !== undefined && (
+                {sold !== undefined && sold > 0 && (
                   <span className="block md:inline">Đã bán <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{sold}</span> acc</span>
                 )}
-                {sold !== undefined && remaining !== undefined && <span className="hidden md:inline mx-1">|</span>}
-                {remaining !== undefined && (
+                {sold !== undefined && sold > 0 && remaining !== undefined && remaining > 0 && <span className="hidden md:inline mx-1">|</span>}
+                {remaining !== undefined && remaining > 0 && (
                   <span className="block md:inline">Còn <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{remaining}</span> acc</span>
                 )}
               </p>
-            )}
+            ) : null}
           </div>
           <Link href={href} className="items-center flex font-bold justify-center mx-auto mt-auto max-w-full w-full md:w-[200px] h-8 md:h-10 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] rounded-lg md:rounded-none md:clip-button text-[12px] md:text-[18px] transition-colors text-black">
             CHI TIẾT

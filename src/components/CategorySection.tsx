@@ -26,8 +26,8 @@ export async function CategorySection() {
               alt={category.title}
               title={category.title}
               price={category.price}
-              sold={category.sold}
-              remaining={category.remaining}
+              sold={Number(category.sold) || undefined}
+              remaining={Number(category.remaining) || undefined}
               href={`/category/${category.slug}`}
             />
           ))}

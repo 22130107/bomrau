@@ -164,44 +164,46 @@ export function ProductDetail({
                   {originalPrice.toLocaleString("vi-VN")}&nbsp;₫
                 </span>
               </div>
-              <div className="flex flex-col text-center mt-[24px] bg-[rgba(254,240,138,0.1)] rounded-br-sm rounded-tr-sm gap-[32px] min-h-[94px] pt-7 pr-3 pb-3 pl-3 border-l-2 border-l-[rgb(251,191,36)]">
-                {petTim !== undefined && (
-                  <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
-                    <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Pet tím</dt>
-                    <dd className="flex flex-wrap gap-2 mt-1">
-                      {petTim.split(",").map((item, i) => (
-                        <span key={i} className="px-3 py-1 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-medium">{item.trim()}</span>
-                      ))}
-                    </dd>
-                  </dl>
-                )}
-                {sanTim !== undefined && (
-                  <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
-                    <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Sàn tím</dt>
-                    <dd className="flex flex-wrap gap-2 mt-1">
-                      {sanTim.split(",").map((item, i) => (
-                        <span key={i} className="px-3 py-1 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-medium">{item.trim()}</span>
-                      ))}
-                    </dd>
-                  </dl>
-                )}
-                {chuong !== undefined && (
-                  <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
-                    <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Chưởng</dt>
-                    <dd className="flex flex-wrap gap-2 mt-1">
-                      {chuong.split(",").map((item, i) => (
-                        <span key={i} className="px-3 py-1 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-medium">{item.trim()}</span>
-                      ))}
-                    </dd>
-                  </dl>
-                )}
-                {extraInfo !== undefined && (
-                  <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
-                    <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Thông tin thêm</dt>
-                    <dd className="font-medium text-left text-[rgb(251,191,36)] text-[16px] md:text-[18px]">{extraInfo}</dd>
-                  </dl>
-                )}
-              </div>
+              {(petTim !== undefined || sanTim !== undefined || chuong !== undefined || extraInfo !== undefined) && (
+                <div className="flex flex-col text-center mt-[24px] bg-[rgba(254,240,138,0.1)] rounded-br-sm rounded-tr-sm gap-[32px] min-h-[94px] pt-7 pr-3 pb-3 pl-3 border-l-2 border-l-[rgb(251,191,36)]">
+                  {petTim !== undefined && (
+                    <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
+                      <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Pet tím</dt>
+                      <dd className="flex flex-wrap gap-2 mt-1">
+                        {petTim.split(",").map((item, i) => (
+                          <span key={i} className="px-3 py-1 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-medium">{item.trim()}</span>
+                        ))}
+                      </dd>
+                    </dl>
+                  )}
+                  {sanTim !== undefined && (
+                    <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
+                      <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Sàn tím</dt>
+                      <dd className="flex flex-wrap gap-2 mt-1">
+                        {sanTim.split(",").map((item, i) => (
+                          <span key={i} className="px-3 py-1 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-medium">{item.trim()}</span>
+                        ))}
+                      </dd>
+                    </dl>
+                  )}
+                  {chuong !== undefined && (
+                    <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
+                      <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Chưởng</dt>
+                      <dd className="flex flex-wrap gap-2 mt-1">
+                        {chuong.split(",").map((item, i) => (
+                          <span key={i} className="px-3 py-1 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-medium">{item.trim()}</span>
+                        ))}
+                      </dd>
+                    </dl>
+                  )}
+                  {extraInfo !== undefined && (
+                    <dl className="border-dashed flex flex-col justify-center relative text-left w-full bg-[rgba(254,240,138,0.1)] border-[rgba(254,240,138,0.2)] border p-2 rounded-lg">
+                      <dt className="absolute text-left left-0 top-[-24px] text-[rgba(238,238,238,0.6)] text-[13px]">Thông tin thêm</dt>
+                      <dd className="font-medium text-left text-[rgb(251,191,36)] text-[16px] md:text-[18px]">{extraInfo}</dd>
+                    </dl>
+                  )}
+                </div>
+              )}
             </div>
           </article>
         </div>

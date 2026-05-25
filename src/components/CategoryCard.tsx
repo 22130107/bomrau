@@ -21,17 +21,17 @@ export function CategoryCard({ image, alt, title, price, sold, remaining, href }
           <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
             <h3 className="font-bold mb-auto text-center text-[rgb(251,191,36)] text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] min-h-10 md:min-h-16">{title}</h3>
             {price && <p className="font-bold text-center text-[12px] md:text-[16px]">{price}</p>}
-            {(sold !== undefined || remaining !== undefined) && (
+            {(sold !== undefined && sold > 0) || (remaining !== undefined && remaining > 0) ? (
               <p className="text-center text-[10px] md:text-[14px] mt-1 leading-tight">
-                {sold !== undefined && (
+                {sold !== undefined && sold > 0 && (
                   <>Đã bán <span className="font-bold text-[rgb(220,38,38)] text-[14px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{sold}</span> acc</>
                 )}
-                {sold !== undefined && remaining !== undefined && <span className="mx-0.5 md:mx-1">|</span>}
-                {remaining !== undefined && (
+                {sold !== undefined && sold > 0 && remaining !== undefined && remaining > 0 && <span className="mx-0.5 md:mx-1">|</span>}
+                {remaining !== undefined && remaining > 0 && (
                   <>Còn <span className="font-bold text-[rgb(220,38,38)] text-[14px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{remaining}</span> acc</>
                 )}
               </p>
-            )}
+            ) : null}
           </div>
           <Link href={href} className="items-center flex font-bold justify-center mx-auto mt-auto max-w-full w-[130px] md:w-[200px] h-9 md:h-10 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] rounded-lg md:rounded-none md:clip-button text-[12px] md:text-[18px] transition-colors text-black">
             XEM THÊM
