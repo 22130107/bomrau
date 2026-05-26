@@ -216,6 +216,7 @@ export function AdminContent({
 
   // States cho Sản phẩm
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showAccountInProduct, setShowAccountInProduct] = useState(false);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
@@ -232,6 +233,10 @@ export function AdminContent({
     san_tim: "",
     chuong: "",
     extra_info: "",
+    account_username: "",
+    account_password: "",
+    account_cost_price: 0,
+    account_note: "",
   });
 
   const productFormRef = useRef<HTMLDivElement>(null);
@@ -249,6 +254,9 @@ export function AdminContent({
 
   // States cho Kho (thêm account từ sản phẩm)
   const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
+  const [productAccountSearch, setProductAccountSearch] = useState("");
+  const [showBulkAccountInput, setShowBulkAccountInput] = useState(false);
+  const [bulkAccountInput, setBulkAccountInput] = useState("");
   const [productAccountForm, setProductAccountForm] = useState({
     login_username: "",
     login_password: "",
@@ -270,6 +278,7 @@ export function AdminContent({
   // States cho Tài khoản
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
+  const [accountSearchTerm, setAccountSearchTerm] = useState("");
   const [selectedCategoryForAccount, setSelectedCategoryForAccount] =
     useState<number>(0);
   const [accountForm, setAccountForm] = useState<AccountFormData>({
@@ -483,6 +492,7 @@ export function AdminContent({
               onClick={() => {
                 setShowAddProduct(true);
                 setEditingProductId(null);
+                setShowAccountInProduct(false);
                 setProductForm({
                   title: "",
                   category_id: initialCategories[0]?.id || 0,
@@ -498,6 +508,10 @@ export function AdminContent({
                   san_tim: "",
                   chuong: "",
                   extra_info: "",
+                  account_username: "",
+                  account_password: "",
+                  account_cost_price: 0,
+                  account_note: "",
                 });
               }}
               className="px-3 md:px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] md:text-[14px] rounded-lg transition-colors"
@@ -795,6 +809,59 @@ export function AdminContent({
                     className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
                   />
                 </div>
+
+                {/* Thêm tài khoản kèm sản phẩm */}
+                <div className="flex items-center gap-2 md:col-span-3 border-t border-[rgba(238,238,238,0.2)] mt-2 pt-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showAccountInProduct}
+                      onChange={(e) => {
+                        setShowAccountInProduct(e.target.checked);
+                        if (!e.target.checked) {
+                          setProductForm({ ...productForm, account_username: "", account_password: "" });
+                        }
+                      }}
+                      className="w-4 h-4 accent-[rgb(251,191,36)]"
+                    />
+                    <span className="text-[14px] text-[rgb(251,191,36)] font-bold">
+                      Thêm tài khoản kèm sản phẩm
+                    </span>
+                  </label>
+                </div>
+                {showAccountInProduct && (
+                  <>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">
+                    Tài khoản ĐN *
+                  </label>
+                  <input
+                    type="text"
+                    value={productForm.account_username || ""}
+                    onChange={(e) =>
+                      setProductForm({ ...productForm, account_username: e.target.value })
+                    }
+                    placeholder="VD: gameaccount123"
+                    className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">
+                    Mật khẩu ĐN *
+                  </label>
+                  <input
+                    type="text"
+                    value={productForm.account_password || ""}
+                    onChange={(e) =>
+                      setProductForm({ ...productForm, account_password: e.target.value })
+                    }
+                    placeholder="VD: password123"
+                    className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                  />
+                </div>
+                  </>
+                )}
+
               </div>
 
               <div className="flex gap-2 mt-4">
@@ -910,7 +977,23 @@ export function AdminContent({
                 ) : (
                   filteredProducts.map((p) => (
                   <React.Fragment key={p.id}>
-                  <tr className="border-b border-[rgb(55,65,81)]">
+                  <tr
+                    className="border-b border-[rgb(55,65,81)] cursor-pointer"
+                    onClick={() => {
+                      setExpandedProductId(
+                        expandedProductId === p.id ? null : p.id,
+                      );
+                      setProductAccountSearch("");
+                      setShowBulkAccountInput(false);
+                      setBulkAccountInput("");
+                      setProductAccountForm({
+                        login_username: "",
+                        login_password: "",
+                        cost_price: 0,
+                        note: "",
+                      });
+                    }}
+                  >
                     <td className="py-3 text-white">#{p.id}</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">
                       {p.title}
@@ -981,8 +1064,13 @@ export function AdminContent({
                                 san_tim: prod.san_tim,
                                 chuong: prod.chuong,
                                 extra_info: prod.extra_info,
+                                account_username: "",
+                                account_password: "",
+                                account_cost_price: 0,
+                                account_note: "",
                               });
                               setEditingProductId(prod.id);
+                              setShowAccountInProduct(false);
                               setShowAddProduct(true);
                             }
                           }}
@@ -990,27 +1078,7 @@ export function AdminContent({
                         >
                           Sửa
                         </button>
-                        <button
-                          disabled={isPending}
-                          onClick={() => {
-                            setExpandedProductId(
-                              expandedProductId === p.id ? null : p.id,
-                            );
-                            setProductAccountForm({
-                              login_username: "",
-                              login_password: "",
-                              cost_price: 0,
-                              note: "",
-                            });
-                          }}
-                          className={`px-2 py-1 rounded text-[11px] disabled:opacity-50 ${
-                            expandedProductId === p.id
-                              ? "bg-[rgb(251,191,36)] text-black"
-                              : "bg-[rgb(107,114,128)] text-white"
-                          }`}
-                        >
-                          Kho
-                        </button>
+
                         <button
                           disabled={isPending}
                           onClick={() => {
@@ -1041,7 +1109,7 @@ export function AdminContent({
                           </h5>
 
                           {/* Form thêm tài khoản */}
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
                             <div className="flex flex-col gap-1">
                               <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Tài khoản ĐN *</label>
                               <input
@@ -1060,17 +1128,6 @@ export function AdminContent({
                                 value={productAccountForm.login_password}
                                 onChange={(e) =>
                                   setProductAccountForm({ ...productAccountForm, login_password: e.target.value })
-                                }
-                                className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Giá nhập</label>
-                              <input
-                                type="number"
-                                value={productAccountForm.cost_price}
-                                onChange={(e) =>
-                                  setProductAccountForm({ ...productAccountForm, cost_price: Number(e.target.value) })
                                 }
                                 className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
                               />
@@ -1099,7 +1156,7 @@ export function AdminContent({
                                         distributor_id: null,
                                         login_username: productAccountForm.login_username,
                                         login_password: productAccountForm.login_password,
-                                        cost_price: productAccountForm.cost_price,
+                                        cost_price: 0,
                                         status: "available",
                                         note: productAccountForm.note,
                                       });
@@ -1122,7 +1179,78 @@ export function AdminContent({
                             </div>
                           </div>
 
+                          {/* Nhập nhiều tài khoản */}
+                          <div className="mb-4">
+                            <button
+                              onClick={() => setShowBulkAccountInput(!showBulkAccountInput)}
+                              className="text-[12px] text-[rgb(251,191,36)] font-bold hover:underline mb-2"
+                            >
+                              {showBulkAccountInput ? "− Thu gọn nhập hàng loạt" : "+ Nhập hàng loạt"}
+                            </button>
+                            {showBulkAccountInput && (
+                              <div className="bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg p-3">
+                                <p className="text-[11px] text-[rgba(238,238,238,0.5)] mb-2">
+                                  Mỗi dòng 1 tài khoản, cách nhau bằng dấu <span className="text-[rgb(251,191,36)]">|</span>. VD: username | password
+                                </p>
+                                <textarea
+                                  value={bulkAccountInput}
+                                  onChange={(e) => setBulkAccountInput(e.target.value)}
+                                  placeholder={`acc1 | pass1\nacc2 | pass2`}
+                                  rows={5}
+                                  className="w-full px-3 py-2 bg-[rgb(2,6,23)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)] resize-vertical font-mono"
+                                />
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    disabled={isPending || !bulkAccountInput.trim()}
+                                    onClick={async () => {
+                                      const lines = bulkAccountInput.trim().split('\n').filter(l => l.trim());
+                                      let success = 0;
+                                      let errors = 0;
+                                      for (const line of lines) {
+                                        const parts = line.split(/[|\t]/).map(s => s.trim());
+                                        const username = parts[0];
+                                        const password = parts[1] || '';
+                                        if (!username || !password) { errors++; continue; }
+                                        const res = await createAccountAction({
+                                          product_id: p.id,
+                                          distributor_id: null,
+                                          login_username: username,
+                                          login_password: password,
+                                          cost_price: 0,
+                                          status: "available",
+                                          note: "",
+                                        });
+                                        if (res.error) errors++;
+                                        else success++;
+                                      }
+                                      alert(`Thành công: ${success} tài khoản${errors ? `, Thất bại: ${errors}` : ''}`);
+                                      if (success > 0) setBulkAccountInput("");
+                                    }}
+                                    className="px-3 py-1.5 bg-[rgb(34,197,94)] hover:bg-[rgb(22,163,74)] text-white font-bold text-[12px] rounded-lg transition-colors disabled:opacity-50"
+                                  >
+                                    {isPending ? "Đang nhập..." : "Nhập tất cả"}
+                                  </button>
+                                  <button
+                                    onClick={() => setShowBulkAccountInput(false)}
+                                    className="px-3 py-1.5 bg-[rgb(75,85,99)] hover:bg-[rgb(107,114,128)] text-white text-[12px] rounded-lg transition-colors"
+                                  >
+                                    Hủy
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
                           {/* Danh sách tài khoản của sản phẩm */}
+                          <div className="mb-2">
+                            <input
+                              type="text"
+                              placeholder="🔍 Tìm tài khoản..."
+                              value={productAccountSearch}
+                              onChange={(e) => setProductAccountSearch(e.target.value)}
+                              className="w-full px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] outline-none focus:border-[rgb(251,191,36)]"
+                            />
+                          </div>
                           <div className="overflow-x-auto">
                             <table className="w-full text-[12px]">
                               <thead>
@@ -1136,14 +1264,14 @@ export function AdminContent({
                                 </tr>
                               </thead>
                               <tbody>
-                                {initialAccounts.filter(a => a.product_id === p.id).length === 0 ? (
+                                {initialAccounts.filter(a => a.product_id === p.id && (!productAccountSearch || a.login_username.toLowerCase().includes(productAccountSearch.toLowerCase()))).length === 0 ? (
                                   <tr>
                                     <td colSpan={6} className="py-4 text-center text-[rgba(238,238,238,0.4)] text-[12px]">
                                       Chưa có tài khoản nào trong kho.
                                     </td>
                                   </tr>
                                 ) : (
-                                  initialAccounts.filter(a => a.product_id === p.id).map((a) => (
+                                  initialAccounts.filter(a => a.product_id === p.id && (!productAccountSearch || a.login_username.toLowerCase().includes(productAccountSearch.toLowerCase()))).map((a) => (
                                     <tr key={a.id} className="border-b border-[rgb(55,65,81)]">
                                       <td className="py-2 text-white">#{a.id}</td>
                                       <td className="py-2 text-white">{a.login_username}</td>
@@ -1374,6 +1502,29 @@ export function AdminContent({
               </div>
             </div>
           )}
+          <div className="flex flex-wrap gap-2 mb-4 p-3 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+            <input
+              type="text"
+              placeholder="🔍 Tìm tài khoản theo username..."
+              value={accountSearchTerm}
+              onChange={(e) => setAccountSearchTerm(e.target.value)}
+              className="flex-1 min-w-[180px] px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            />
+            <select
+              value={selectedCategoryForAccount}
+              onChange={(e) => {
+                setSelectedCategoryForAccount(Number(e.target.value));
+              }}
+              className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            >
+              <option value={0}>Tất cả danh mục</option>
+              {initialCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
               <thead>
@@ -1393,7 +1544,16 @@ export function AdminContent({
                 </tr>
               </thead>
               <tbody>
-                {initialAccounts.map((a) => (
+                {initialAccounts
+                  .filter(a => {
+                    if (selectedCategoryForAccount !== 0) {
+                      const prod = initialProducts.find(p => p.id === a.product_id);
+                      if (!prod || prod.category_id !== selectedCategoryForAccount) return false;
+                    }
+                    if (accountSearchTerm && !a.login_username.toLowerCase().includes(accountSearchTerm.toLowerCase())) return false;
+                    return true;
+                  })
+                  .map((a) => (
                   <tr key={a.id} className="border-b border-[rgb(55,65,81)]">
                     <td className="py-3 text-white">#{a.id}</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">

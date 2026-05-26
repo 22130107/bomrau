@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Open_Sans, Nunito } from "next/font/google";
 import "./globals.css";
+import { ContactButton } from "@/components/ContactButton";
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
@@ -37,6 +38,7 @@ export default function RootLayout({
     <html lang="vi" className={`${openSans.variable} ${nunito.variable}`}>
       <body className="min-h-screen bg-[rgb(15,23,42)] text-[rgb(238,238,238)] font-[family-name:var(--font-open-sans)]">
         {children}
+        <ContactButton />
       </body>
     </html>
   );

@@ -22,7 +22,7 @@ export async function searchAction(query: string): Promise<SearchResult[]> {
               c.slug as category_slug, c.name as category_name
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
-       WHERE p.status = 'available'
+       WHERE p.status = 'available' AND EXISTS (SELECT 1 FROM accounts WHERE product_id = p.id AND status = 'available')
          AND (p.title LIKE ? OR p.pet_tim LIKE ? OR p.san_tim LIKE ? OR p.chuong LIKE ? OR p.extra_info LIKE ?)
        ORDER BY
          CASE

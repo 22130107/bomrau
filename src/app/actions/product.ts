@@ -20,6 +20,10 @@ export interface ProductFormData {
   san_tim?: string;
   chuong?: string;
   extra_info?: string;
+  account_username?: string;
+  account_password?: string;
+  account_cost_price?: number;
+  account_note?: string;
 }
 
 export async function createProductAction(data: ProductFormData) {
@@ -34,7 +38,7 @@ export async function createProductAction(data: ProductFormData) {
     const fakeSold = data.fake_sold_count || 0;
     const fakeRemaining = data.fake_remaining_count || 0;
 
-    await pool.query(
+    const [result] = await pool.query(
       `INSERT INTO products (
         category_id, title, image_url, price, original_price, discount_percent, 
         fake_sold_count, fake_remaining_count, status, is_pinned, pet_tim, san_tim, chuong, extra_info
@@ -45,6 +49,19 @@ export async function createProductAction(data: ProductFormData) {
         data.status || "available", data.is_pinned ? 1 : 0, data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null
       ]
     );
+
+    // Nếu có nhập tài khoản thì tạo luôn 1 account cho sản phẩm vừa tạo
+    if (data.account_username && data.account_password) {
+      const productId = (result as any).insertId;
+      await pool.query(
+        `INSERT INTO accounts (product_id, distributor_id, login_username, login_password, cost_price, status, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          productId, null, data.account_username, data.account_password,
+          data.account_cost_price || 0, "available", data.account_note || ""
+        ]
+      );
+    }
 
     revalidatePath("/admin");
     revalidatePath("/");
