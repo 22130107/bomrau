@@ -49,7 +49,7 @@ export default async function CategoryPage({
            fake_sold_count as sold, fake_remaining_count as remaining
     FROM products 
     WHERE category_id = ? AND status = 'available'
-    ORDER BY id DESC
+    ORDER BY price ASC
     LIMIT ? OFFSET ?
   `, [category.id, ITEMS_PER_PAGE, offset]);
 
