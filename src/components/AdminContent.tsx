@@ -10,6 +10,7 @@ import {
   createProductAction,
   updateProductAction,
   deleteProductAction,
+  togglePinProductAction,
   ProductFormData,
 } from "@/app/actions/product";
 import {
@@ -103,6 +104,7 @@ export interface AdminProduct {
   fake_remaining_count: number;
   category_name: string;
   status: "available" | "hidden";
+  is_pinned: boolean;
   pet_tim?: string;
   san_tim?: string;
   chuong?: string;
@@ -225,6 +227,7 @@ export function AdminContent({
     fake_sold_count: 0,
     fake_remaining_count: 0,
     status: "available",
+    is_pinned: false,
     pet_tim: "",
     san_tim: "",
     chuong: "",
@@ -490,6 +493,7 @@ export function AdminContent({
                   fake_sold_count: 0,
                   fake_remaining_count: 0,
                   status: "available",
+                  is_pinned: false,
                   pet_tim: "",
                   san_tim: "",
                   chuong: "",
@@ -725,6 +729,25 @@ export function AdminContent({
                   </select>
                 </div>
 
+                <div className="flex items-end gap-2 pb-1">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={productForm.is_pinned}
+                      onChange={(e) =>
+                        setProductForm({
+                          ...productForm,
+                          is_pinned: e.target.checked,
+                        })
+                      }
+                      className="w-4 h-4 accent-[rgb(251,191,36)]"
+                    />
+                    <span className="text-[12px] text-[rgba(238,238,238,0.6)]">
+                      Ghim lên đầu
+                    </span>
+                  </label>
+                </div>
+
                 {/* Extra info fields */}
                 <div className="flex flex-col gap-1 md:col-span-3 border-t border-[rgba(238,238,238,0.2)] mt-2 pt-3">
                   <span className="text-[14px] text-[rgb(251,191,36)] font-bold">
@@ -864,7 +887,10 @@ export function AdminContent({
                     Đã bán
                   </th>
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
-                    Còn
+                    <span className="text-[rgb(251,191,36)]">Còn</span>
+                  </th>
+                  <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
+                    Ghim
                   </th>
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
                     Trạng thái
@@ -877,7 +903,7 @@ export function AdminContent({
               <tbody>
                 {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
+                    <td colSpan={9} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
                       Không tìm thấy sản phẩm phù hợp.
                     </td>
                   </tr>
@@ -900,6 +926,25 @@ export function AdminContent({
                     </td>
                     <td className="py-3 text-[rgb(34,197,94)] font-bold">
                       {p.fake_remaining_count}
+                    </td>
+                    <td className="py-3">
+                      <button
+                        disabled={isPending}
+                        onClick={() => {
+                          startTransition(async () => {
+                            const res = await togglePinProductAction(p.id);
+                            if (res.error) alert(res.error);
+                          });
+                        }}
+                        className={`text-[16px] leading-none px-1.5 py-1 rounded transition-colors ${
+                          p.is_pinned
+                            ? "text-[rgb(251,191,36)] bg-[rgba(251,191,36,0.15)]"
+                            : "text-[rgb(107,114,128)] hover:text-[rgb(156,163,175)]"
+                        }`}
+                        title={p.is_pinned ? "Bỏ ghim" : "Ghim lên đầu"}
+                      >
+                        📌
+                      </button>
                     </td>
                     <td className="py-3">
                       <span
@@ -931,6 +976,7 @@ export function AdminContent({
                                 fake_sold_count: prod.fake_sold_count,
                                 fake_remaining_count: prod.fake_remaining_count,
                                 status: prod.status,
+                                is_pinned: prod.is_pinned,
                                 pet_tim: prod.pet_tim,
                                 san_tim: prod.san_tim,
                                 chuong: prod.chuong,

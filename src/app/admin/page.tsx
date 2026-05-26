@@ -35,12 +35,12 @@ export default async function AdminPage() {
   // 2. Fetch Products
   const [productRows] = await pool.query<RowDataPacket[]>(`
     SELECT p.id, p.category_id, p.title, p.image_url, 
-           p.price, p.original_price, p.discount_percent, p.fake_sold_count, p.fake_remaining_count, p.status, 
+           p.price, p.original_price, p.discount_percent, p.fake_sold_count, p.fake_remaining_count, p.status, p.is_pinned,
            p.pet_tim, p.san_tim, p.chuong, p.extra_info,
            c.name as category_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.id
-    ORDER BY p.id DESC
+    ORDER BY p.is_pinned DESC, p.id DESC
   `);
 
   const initialProducts: AdminProduct[] = productRows.map(row => ({
@@ -55,6 +55,7 @@ export default async function AdminPage() {
     fake_remaining_count: Number(row.fake_remaining_count) || 0,
     category_name: row.category_name || "N/A",
     status: row.status as "available" | "hidden",
+    is_pinned: Boolean(row.is_pinned),
     pet_tim: row.pet_tim || "",
     san_tim: row.san_tim || "",
     chuong: row.chuong || "",
