@@ -1698,7 +1698,6 @@ export function AdminContent({
                         <button
                           disabled={isPending}
                           onClick={() => {
-                            // Find full data from DB via initialCategories
                             const cat = initialCategories.find(
                               (x) => x.id === c.id,
                             );
