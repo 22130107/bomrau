@@ -320,7 +320,7 @@ export function ProductDetail({
                           }}
                           className="w-full flex items-center justify-center gap-2 py-3 bg-[rgb(124,58,237)] hover:bg-[rgb(139,92,246)] text-white font-bold text-[15px] rounded-lg transition-colors cursor-pointer"
                         >
-                          Chuyển Khoản Nạp Động (SePay)
+                          Chuyển Khoản Nạp Động
                         </button>
                         <Link
                           href="/profile"
@@ -457,7 +457,7 @@ export function ProductDetail({
               </>
             )}
 
-            {/* MODE: QUICK QR FOR SEPAY */}
+            {/* MODE: QUICK QR */}
             {modalMode === "qr" && currentUser && (
               <>
                 <div className="flex items-center justify-between mb-3">
@@ -476,7 +476,7 @@ export function ProductDetail({
                   <div className="bg-white rounded-xl p-2.5 mb-3 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                     <img
                       src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${price - currentUser.balance}&addInfo=BOMRAU%20NAP%20${currentUser.id}`}
-                      alt="VietQR SePay"
+                      alt="VietQR"
                       className="w-[180px] h-[180px] object-contain"
                     />
                   </div>

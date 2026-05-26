@@ -328,7 +328,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
                       <div className="bg-white rounded-xl p-3 flex items-center justify-center shadow-lg">
                         <img
                           src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${topupAmount}&addInfo=BOMRAU%20NAP%20${user.id}`}
-                          alt="VietQR SePay"
+                          alt="VietQR"
                           className="w-[180px] h-[180px] object-contain"
                         />
                       </div>
