@@ -24,11 +24,11 @@ export function CategoryCard({ image, alt, title, price, sold, remaining, href }
             {(sold !== undefined && sold > 0) || (remaining !== undefined && remaining > 0) ? (
               <p className="text-center text-[10px] md:text-[14px] mt-1 leading-tight">
                 {sold !== undefined && sold > 0 && (
-                  <>Đã bán <span className="font-bold text-[rgb(220,38,38)] text-[14px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{sold}</span> acc</>
+                  <>Đã bán <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{sold}</span> acc</>
                 )}
                 {sold !== undefined && sold > 0 && remaining !== undefined && remaining > 0 && <span className="mx-0.5 md:mx-1">|</span>}
                 {remaining !== undefined && remaining > 0 && (
-                  <>Còn <span className="font-bold text-[rgb(220,38,38)] text-[14px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{remaining}</span> acc</>
+                  <>Còn <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{remaining}</span> acc</>
                 )}
               </p>
             ) : null}

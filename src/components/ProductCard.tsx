@@ -39,11 +39,11 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
             {(sold !== undefined && sold > 0) || (remaining !== undefined && remaining > 0) ? (
               <p className="text-center text-[10px] md:text-[14px] mt-1 md:mt-2 flex flex-col md:flex-row md:justify-center md:items-center gap-0.5 md:gap-0">
                 {sold !== undefined && sold > 0 && (
-                  <span className="block md:inline">Đã bán <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{sold}</span> acc</span>
+                  <span className="block md:inline">Đã bán <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{sold}</span> acc</span>
                 )}
                 {sold !== undefined && sold > 0 && remaining !== undefined && remaining > 0 && <span className="hidden md:inline mx-1">|</span>}
                 {remaining !== undefined && remaining > 0 && (
-                  <span className="block md:inline">Còn <span className="font-bold text-[rgb(220,38,38)] text-[13px] md:text-[22px] animate-pulse font-[family-name:var(--font-nunito)]">{remaining}</span> acc</span>
+                  <span className="block md:inline">Còn <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{remaining}</span> acc</span>
                 )}
               </p>
             ) : null}
