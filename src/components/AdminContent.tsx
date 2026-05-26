@@ -624,7 +624,7 @@ export function AdminContent({
                         ...productForm,
                         original_price: v,
                         discount_percent:
-                          p > 0 && v > 0
+                          p > 0 && v > p
                             ? Math.round((1 - p / v) * 100)
                             : productForm.discount_percent,
                       });
@@ -646,7 +646,7 @@ export function AdminContent({
                         ...productForm,
                         price: p,
                         discount_percent:
-                          o > 0 && p > 0 ? Math.round((1 - p / o) * 100) : 0,
+                          o > 0 && p > 0 && o > p ? Math.round((1 - p / o) * 100) : 0,
                       });
                     }}
                     className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"

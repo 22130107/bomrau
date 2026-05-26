@@ -40,7 +40,7 @@ export async function createProductAction(data: ProductFormData) {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.category_id, data.title, data.image_url || "", data.price, data.original_price || 0,
-        data.discount_percent || 0, fakeSold, fakeRemaining,
+        Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
         data.status || "available", data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null
       ]
     );
@@ -89,7 +89,7 @@ export async function updateProductAction(id: number, data: ProductFormData) {
       WHERE id=?`,
       [
         data.category_id, data.title, data.image_url || "", data.price, data.original_price || 0,
-        data.discount_percent || 0, fakeSold, fakeRemaining,
+        Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
         data.status || "available", data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null, id
       ]
     );
