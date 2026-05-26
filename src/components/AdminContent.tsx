@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useTransition, useEffect } from "react";
+import React, { useState, useRef, useTransition, useEffect } from "react";
 import {
   createCategoryAction,
   updateCategoryAction,
@@ -231,10 +231,27 @@ export function AdminContent({
     extra_info: "",
   });
 
+  const productFormRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showAddProduct && productFormRef.current) {
+      productFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showAddProduct]);
+
   // States cho lọc sản phẩm
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState(0);
   const [productStatusFilter, setProductStatusFilter] = useState<string>("all");
+
+  // States cho Kho (thêm account từ sản phẩm)
+  const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
+  const [productAccountForm, setProductAccountForm] = useState({
+    login_username: "",
+    login_password: "",
+    cost_price: 0,
+    note: "",
+  });
 
   const filteredProducts = initialProducts.filter((p) => {
     const matchesSearch = p.title
@@ -485,7 +502,7 @@ export function AdminContent({
             </button>
           </div>
           {showAddProduct && (
-            <div className="mb-6 p-4 md:p-6 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+            <div ref={productFormRef} className="mb-6 p-4 md:p-6 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
               <h4 className="text-[rgb(251,191,36)] font-bold text-[16px] mb-4">
                 {editingProductId ? "Sửa sản phẩm" : "Thêm sản phẩm mới"}
               </h4>
@@ -866,7 +883,8 @@ export function AdminContent({
                   </tr>
                 ) : (
                   filteredProducts.map((p) => (
-                  <tr key={p.id} className="border-b border-[rgb(55,65,81)]">
+                  <React.Fragment key={p.id}>
+                  <tr className="border-b border-[rgb(55,65,81)]">
                     <td className="py-3 text-white">#{p.id}</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">
                       {p.title}
@@ -929,6 +947,27 @@ export function AdminContent({
                         <button
                           disabled={isPending}
                           onClick={() => {
+                            setExpandedProductId(
+                              expandedProductId === p.id ? null : p.id,
+                            );
+                            setProductAccountForm({
+                              login_username: "",
+                              login_password: "",
+                              cost_price: 0,
+                              note: "",
+                            });
+                          }}
+                          className={`px-2 py-1 rounded text-[11px] disabled:opacity-50 ${
+                            expandedProductId === p.id
+                              ? "bg-[rgb(251,191,36)] text-black"
+                              : "bg-[rgb(107,114,128)] text-white"
+                          }`}
+                        >
+                          Kho
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
                             if (
                               confirm(
                                 `Bạn có chắc chắn muốn xóa sản phẩm #${p.id}? Toàn bộ Kho Tài khoản thuộc SP này cũng sẽ BỊ XÓA! (Cân nhắc Đổi trạng thái sang Ẩn)`,
@@ -947,6 +986,155 @@ export function AdminContent({
                       </div>
                     </td>
                   </tr>
+                  {expandedProductId === p.id && (
+                    <tr>
+                      <td colSpan={8} className="pt-2 pb-4">
+                        <div className="bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] p-4">
+                          <h5 className="text-[rgb(251,191,36)] font-bold text-[14px] mb-3">
+                            Kho tài khoản - {p.title}
+                          </h5>
+
+                          {/* Form thêm tài khoản */}
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Tài khoản ĐN *</label>
+                              <input
+                                type="text"
+                                value={productAccountForm.login_username}
+                                onChange={(e) =>
+                                  setProductAccountForm({ ...productAccountForm, login_username: e.target.value })
+                                }
+                                className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Mật khẩu ĐN *</label>
+                              <input
+                                type="text"
+                                value={productAccountForm.login_password}
+                                onChange={(e) =>
+                                  setProductAccountForm({ ...productAccountForm, login_password: e.target.value })
+                                }
+                                className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Giá nhập</label>
+                              <input
+                                type="number"
+                                value={productAccountForm.cost_price}
+                                onChange={(e) =>
+                                  setProductAccountForm({ ...productAccountForm, cost_price: Number(e.target.value) })
+                                }
+                                className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+                              />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Ghi chú</label>
+                              <div className="flex gap-1">
+                                <input
+                                  type="text"
+                                  value={productAccountForm.note}
+                                  onChange={(e) =>
+                                    setProductAccountForm({ ...productAccountForm, note: e.target.value })
+                                  }
+                                  className="flex-1 px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+                                />
+                                <button
+                                  disabled={isPending}
+                                  onClick={() => {
+                                    if (!productAccountForm.login_username || !productAccountForm.login_password) {
+                                      alert("Vui lòng nhập tài khoản và mật khẩu");
+                                      return;
+                                    }
+                                    startTransition(async () => {
+                                      const res = await createAccountAction({
+                                        product_id: p.id,
+                                        distributor_id: null,
+                                        login_username: productAccountForm.login_username,
+                                        login_password: productAccountForm.login_password,
+                                        cost_price: productAccountForm.cost_price,
+                                        status: "available",
+                                        note: productAccountForm.note,
+                                      });
+                                      if (res.error) alert(res.error);
+                                      else {
+                                        setProductAccountForm({
+                                          login_username: "",
+                                          login_password: "",
+                                          cost_price: 0,
+                                          note: "",
+                                        });
+                                      }
+                                    });
+                                  }}
+                                  className="px-3 py-1.5 bg-[rgb(34,197,94)] hover:bg-[rgb(22,163,74)] text-white font-bold text-[12px] rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  {isPending ? "..." : "+ Thêm"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Danh sách tài khoản của sản phẩm */}
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-[12px]">
+                              <thead>
+                                <tr className="border-b border-[rgb(75,85,99)]">
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">ID</th>
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Username</th>
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Password</th>
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Giá nhập</th>
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Trạng thái</th>
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Xóa</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {initialAccounts.filter(a => a.product_id === p.id).length === 0 ? (
+                                  <tr>
+                                    <td colSpan={6} className="py-4 text-center text-[rgba(238,238,238,0.4)] text-[12px]">
+                                      Chưa có tài khoản nào trong kho.
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  initialAccounts.filter(a => a.product_id === p.id).map((a) => (
+                                    <tr key={a.id} className="border-b border-[rgb(55,65,81)]">
+                                      <td className="py-2 text-white">#{a.id}</td>
+                                      <td className="py-2 text-white">{a.login_username}</td>
+                                      <td className="py-2 text-white">{a.login_password}</td>
+                                      <td className="py-2 text-white">{a.cost_price.toLocaleString("vi-VN")}đ</td>
+                                      <td className="py-2">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${a.status === "available" ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : a.status === "sold" ? "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]" : "bg-[rgba(107,114,128,0.2)] text-[rgb(156,163,175)]"}`}>
+                                          {a.status === "available" ? "Tồn kho" : a.status === "sold" ? "Đã giao" : "Lỗi/Ẩn"}
+                                        </span>
+                                      </td>
+                                      <td className="py-2">
+                                        <button
+                                          disabled={isPending}
+                                          onClick={() => {
+                                            if (confirm(`Xóa Acc #${a.id}?`)) {
+                                              startTransition(async () => {
+                                                const res = await deleteAccountAction(a.id);
+                                                if (res.error) alert(res.error);
+                                              });
+                                            }
+                                          }}
+                                          className="px-2 py-0.5 bg-[rgb(220,38,38)] text-white text-[10px] rounded disabled:opacity-50"
+                                        >
+                                          Xóa
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </React.Fragment>
                 )))}
               </tbody>
             </table>
