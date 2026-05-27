@@ -18,11 +18,12 @@ export interface SpinProduct {
 
 interface RandomSpinProps {
   isLoggedIn: boolean;
+  userId: number | null;
   balance: number;
   spinProducts: SpinProduct[];
 }
 
-export function RandomSpin({ isLoggedIn, balance, spinProducts }: RandomSpinProps) {
+export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: RandomSpinProps) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "result" | "error">("idle");
   const [result, setResult] = useState<{
     category: { name: string; slug: string; image_url: string };
@@ -33,6 +34,13 @@ export function RandomSpin({ isLoggedIn, balance, spinProducts }: RandomSpinProp
   const [progress, setProgress] = useState(0);
   const [spinProduct, setSpinProduct] = useState<SpinProduct | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [showTopup, setShowTopup] = useState(false);
+  const [topupAmount, setTopupAmount] = useState("50000");
+  const [showQR, setShowQR] = useState(false);
+  const [copiedField, setCopiedField] = useState("");
+  const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "TPBANK";
+  const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "08040125109";
+  const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "TRINH HUU HUYNH";
 
   const pickRandomProduct = () => {
     if (spinProducts.length === 0) return null;
@@ -113,9 +121,17 @@ export function RandomSpin({ isLoggedIn, balance, spinProducts }: RandomSpinProp
               </Link>
             )}
             {isLoggedIn && !canSpin && (
-              <p className="text-[rgb(220,38,38)] text-[13px]">
-                Số dư không đủ. Vui lòng nạp thêm tiền.
-              </p>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-[rgb(220,38,38)] text-[13px]">
+                  Số dư không đủ. Vui lòng nạp thêm tiền.
+                </p>
+                <button
+                  onClick={() => setShowTopup(true)}
+                  className="px-4 py-1.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[12px] rounded-lg transition-colors"
+                >
+                  Nạp tiền ngay
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -223,7 +239,101 @@ export function RandomSpin({ isLoggedIn, balance, spinProducts }: RandomSpinProp
         </button>
       )}
 
+      {isLoggedIn && phase === "idle" && (
+        <div className="w-full">
+          <button
+            onClick={() => { setShowTopup(!showTopup); setShowQR(false); }}
+            className="w-full flex items-center justify-between px-4 py-2.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99,0.5)] hover:border-[rgb(251,191,36,0.3)] rounded-xl transition-all duration-200"
+          >
+            <div className="flex items-center gap-2">
+              <i className="fa-solid fa-circle-plus text-[rgb(34,197,94)] text-[16px]" />
+              <span className="text-white text-[14px] font-semibold">Nạp tiền</span>
+            </div>
+            <i className={`fa-solid fa-chevron-down text-[rgba(238,238,238,0.4)] text-[12px] transition-transform ${showTopup ? "rotate-180" : ""}`} />
+          </button>
 
+          {showTopup && (
+            <div className="mt-3 bg-[rgb(17,24,39)] border border-[rgb(75,85,99,0.5)] rounded-xl p-4 animate-fade-in-up">
+              <p className="text-[rgba(238,238,238,0.5)] text-[12px] mb-3">Chọn số tiền muốn nạp</p>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {[50000, 100000, 200000, 500000].map((amount) => (
+                  <button
+                    key={amount}
+                    onClick={() => { setTopupAmount(String(amount)); setShowQR(false); }}
+                    className={`py-2.5 rounded-lg font-bold text-[13px] transition-colors border ${
+                      topupAmount === String(amount)
+                        ? "bg-[rgb(202,138,4)] text-black border-[rgb(251,191,36)]"
+                        : "bg-[rgb(31,41,55)] text-white border-[rgb(75,85,99)] hover:border-[rgb(251,191,36)]"
+                    }`}
+                  >
+                    {amount.toLocaleString("vi-VN")}đ
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => setShowQR(true)}
+                className="w-full py-2.5 bg-[rgb(34,197,94)] hover:bg-[rgb(22,163,74)] text-white font-bold text-[14px] rounded-lg transition-colors mb-3"
+              >
+                Tạo mã QR nạp tiền
+              </button>
+
+              {showQR && (
+                <div className="flex flex-col items-center gap-3 animate-fade-in-up">
+                  <div className="bg-white rounded-xl p-2">
+                    <img
+                      src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${topupAmount}&addInfo=BOMRAU%20NAP%20${userId}`}
+                      alt="VietQR"
+                      className="w-[160px] h-[160px] object-contain"
+                    />
+                  </div>
+                  <div className="w-full text-[13px]">
+                    <div className="flex justify-between py-1.5 border-b border-[rgb(75,85,99,0.5)]">
+                      <span className="text-[rgba(238,238,238,0.5)]">Ngân hàng</span>
+                      <span className="text-white font-semibold">{bankName === "MB" ? "MB Bank" : bankName}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-[rgb(75,85,99,0.5)]">
+                      <span className="text-[rgba(238,238,238,0.5)]">STK</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-semibold">{bankAccount}</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(bankAccount); setCopiedField("stk"); setTimeout(() => setCopiedField(""), 1500); }}
+                          className="text-[rgb(251,191,36)] text-[11px] hover:underline cursor-pointer"
+                        >
+                          {copiedField === "stk" ? "Đã chép" : "Copy"}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-[rgb(75,85,99,0.5)]">
+                      <span className="text-[rgba(238,238,238,0.5)]">Chủ TK</span>
+                      <span className="text-white font-semibold uppercase">{bankHolder}</span>
+                    </div>
+                    <div className="flex justify-between py-1.5 border-b border-[rgb(75,85,99,0.5)]">
+                      <span className="text-[rgba(238,238,238,0.5)]">Số tiền</span>
+                      <span className="text-[rgb(251,191,36)] font-bold">{Number(topupAmount).toLocaleString("vi-VN")}đ</span>
+                    </div>
+                    <div className="flex justify-between py-1.5">
+                      <span className="text-[rgba(238,238,238,0.5)]">Nội dung CK</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-extrabold bg-[rgba(251,191,36,0.15)] px-2 py-0.5 rounded text-[13px]">BOMRAU NAP {userId}</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(`BOMRAU NAP ${userId}`); setCopiedField("content"); setTimeout(() => setCopiedField(""), 1500); }}
+                          className="text-[rgb(251,191,36)] text-[11px] hover:underline cursor-pointer"
+                        >
+                          {copiedField === "content" ? "Đã chép" : "Copy"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-[rgba(238,238,238,0.4)] text-[11px] leading-relaxed text-center">
+                    Chuyển đúng nội dung trên để hệ thống tự động cộng tiền sau 1-2 phút.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

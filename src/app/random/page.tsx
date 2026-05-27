@@ -70,6 +70,7 @@ export default async function RandomPage() {
             </p>
             <RandomSpin
               isLoggedIn={!!session}
+              userId={session?.userId ?? null}
               balance={balance}
               spinProducts={spinProducts}
             />
