@@ -673,12 +673,16 @@ export function AdminContent({
                     value={productForm.price}
                     onChange={(e) => {
                       const p = Number(e.target.value);
-                      const o = productForm.original_price;
+                      const d = productForm.discount_percent;
                       setProductForm({
                         ...productForm,
                         price: p,
+                        original_price:
+                          d > 0 && p > 0 ? Math.round(p / (1 - d / 100)) : productForm.original_price,
                         discount_percent:
-                          o > 0 && p > 0 && o > p ? Math.round((1 - p / o) * 100) : 0,
+                          !d && productForm.original_price > 0 && p > 0 && productForm.original_price > p
+                            ? Math.round((1 - p / productForm.original_price) * 100)
+                            : d,
                       });
                     }}
                     className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
@@ -686,11 +690,25 @@ export function AdminContent({
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-[12px] text-[rgba(238,238,238,0.6)]">
-                    % Giảm giá (tự động)
+                    % Giảm giá
                   </label>
-                  <div className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-bold flex items-center">
-                    {productForm.discount_percent}%
-                  </div>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={productForm.discount_percent}
+                    onChange={(e) => {
+                      const d = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                      const p = productForm.price;
+                      setProductForm({
+                        ...productForm,
+                        discount_percent: d,
+                        original_price:
+                          d > 0 && p > 0 ? Math.round(p / (1 - d / 100)) : productForm.original_price,
+                      });
+                    }}
+                    className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-[rgb(251,191,36)] text-[14px] font-bold outline-none focus:border-[rgb(251,191,36)]"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1">
