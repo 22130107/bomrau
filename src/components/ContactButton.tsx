@@ -10,7 +10,7 @@ export function ContactButton() {
       {open && (
         <div className="flex flex-col items-end gap-3 animate-fade-in">
           <a
-            href="https://zalo.me/0376529598"
+            href="https://zalo.me/0338180818"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 bg-white rounded-full pr-5 pl-3 py-2 shadow-lg hover:scale-105 transition-transform group"
