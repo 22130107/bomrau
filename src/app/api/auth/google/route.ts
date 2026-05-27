@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { OAuth2Client } from "google-auth-library";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import pool from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { RowDataPacket, ResultSetHeader } from "mysql2";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleJWKS = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/oauth2/v3/certs")
+);
+
+interface GoogleTokenPayload {
+  sub: string;
+  email?: string;
+  name?: string;
+  picture?: string;
+  aud: string;
+  iss: string;
+  exp: number;
+  iat: number;
+}
 
 interface UserRow extends RowDataPacket {
   id: number;
@@ -21,13 +34,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Thiếu mã xác thực Google." }, { status: 400 });
     }
 
-    const ticket = await client.verifyIdToken({
-      idToken: credential,
+    const { payload: raw } = await jwtVerify(credential, googleJWKS, {
+      issuer: ["accounts.google.com", "https://accounts.google.com"],
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
-    const payload = ticket.getPayload();
-    if (!payload || !payload.sub) {
+    const payload = raw as unknown as GoogleTokenPayload;
+
+    if (!payload.sub) {
       return NextResponse.json({ error: "Mã xác thực Google không hợp lệ." }, { status: 401 });
     }
 
