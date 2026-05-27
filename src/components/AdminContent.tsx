@@ -66,6 +66,9 @@ import {
   toggleUserLockAction,
   getUserDetailAction,
 } from "@/app/actions/admin-user";
+import {
+  toggleCategorySpinAction,
+} from "@/app/actions/admin-spin";
 import { AutocompleteField } from "@/components/AutocompleteField";
 import {
   getAllProductOptions,
@@ -163,6 +166,13 @@ export interface AdminOrder {
   status: "pending" | "completed" | "cancelled" | "refunded";
 }
 
+export interface AdminSpinCategory {
+  id: number;
+  name: string;
+  is_spin_enabled: boolean;
+  available_accounts: number;
+}
+
 export interface AdminContentProps {
   stats: AdminStats;
   initialProducts: AdminProduct[];
@@ -172,6 +182,7 @@ export interface AdminContentProps {
   initialUsers: AdminUser[];
   initialOrders: AdminOrder[];
   initialNotifications: AdminNotification[];
+  initialSpinCategories: AdminSpinCategory[];
 }
 
 export function AdminContent({
@@ -183,6 +194,7 @@ export function AdminContent({
   initialUsers,
   initialOrders,
   initialNotifications,
+  initialSpinCategories,
 }: AdminContentProps) {
   const [activeTab, setActiveTab] = useState<
     | "stats"
@@ -194,6 +206,7 @@ export function AdminContent({
     | "orders"
     | "notifications"
     | "options"
+    | "spin"
   >("stats");
 
   // Trạng thái chung
@@ -421,7 +434,8 @@ export function AdminContent({
     { key: "users", label: "Người dùng" },
     { key: "orders", label: "Đơn hàng" },
     { key: "notifications", label: "Thông báo" },
-    { key: "options", label: "Pet/Sàn/Chưởng" },
+    { key: "spin", label: "Quay Random" },
+    { key: "options", label: "Pet/San/Chuong" },
   ] as const;
 
   return (
@@ -2913,6 +2927,72 @@ export function AdminContent({
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Quay Random tab */}
+      {activeTab === "spin" && (
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">
+              Cấu hình Quay Random
+            </h3>
+          </div>
+          <p className="text-[rgba(238,238,238,0.5)] text-[13px] mb-4">
+            Bật/Tắt danh mục được phép quay random. Chi phí mỗi lượt quay: <strong className="text-[rgb(251,191,36)]">10.000đ</strong>.
+            Hệ thống sẽ chọn random 1 account <strong className="text-[rgb(34,197,94)]">còn hàng</strong> từ các danh mục được bật.
+          </p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-[12px] md:text-[14px]">
+              <thead>
+                <tr className="border-b border-[rgb(75,85,99)]">
+                  <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Danh mục</th>
+                  <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Acc còn trong kho</th>
+                  <th className="text-center py-3 text-[rgba(238,238,238,0.6)]">Cho phép quay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {initialSpinCategories.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
+                      Chưa có danh mục nào.
+                    </td>
+                  </tr>
+                ) : (
+                  initialSpinCategories.map((cat) => (
+                    <tr key={cat.id} className="border-b border-[rgb(55,65,81)]">
+                      <td className="py-3 text-white font-semibold">{cat.name}</td>
+                      <td className="py-3">
+                        <span className={`font-bold ${cat.available_accounts > 0 ? "text-[rgb(34,197,94)]" : "text-[rgb(220,38,38)]"}`}>
+                          {cat.available_accounts}
+                        </span>
+                      </td>
+                      <td className="py-3 text-center">
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              const res = await toggleCategorySpinAction(cat.id, !cat.is_spin_enabled);
+                              if (res.error) alert(res.error);
+                            });
+                          }}
+                          className={`relative inline-flex w-12 h-6 rounded-full transition-colors ${
+                            cat.is_spin_enabled ? "bg-[rgb(34,197,94)]" : "bg-[rgb(75,85,99)]"
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                              cat.is_spin_enabled ? "translate-x-[26px]" : "translate-x-[2px]"
+                            }`}
+                          />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { AdminContent, AdminStats, AdminProduct, AdminAccount, AdminCategory, AdminDistributor, AdminUser, AdminOrder, AdminNotification } from "@/components/AdminContent";
+import { AdminContent, AdminStats, AdminProduct, AdminAccount, AdminCategory, AdminDistributor, AdminUser, AdminOrder, AdminNotification, AdminSpinCategory } from "@/components/AdminContent";
 import { getSession } from "@/lib/session";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
@@ -31,6 +31,23 @@ export default async function AdminPage() {
     totalSoldAccounts: Number(soldAccountCountRows[0].total) || 0,
     totalOrders: Number(orderCountRows[0].total) || 0,
   };
+
+  // Fetch Spin Categories
+  const [spinCategoryRows] = await pool.query<RowDataPacket[]>(`
+    SELECT c.id, c.name, c.is_spin_enabled,
+           (SELECT COUNT(*) FROM accounts a
+            JOIN products p ON a.product_id = p.id
+            WHERE p.category_id = c.id AND a.status = 'available' AND p.status = 'available') as available_accounts
+    FROM categories c
+    ORDER BY c.sort_order ASC
+  `);
+
+  const initialSpinCategories: AdminSpinCategory[] = spinCategoryRows.map(row => ({
+    id: row.id,
+    name: row.name,
+    is_spin_enabled: Boolean(row.is_spin_enabled),
+    available_accounts: Number(row.available_accounts) || 0,
+  }));
 
   // 2. Fetch Products
   const [productRows] = await pool.query<RowDataPacket[]>(`
@@ -189,6 +206,7 @@ export default async function AdminPage() {
           initialUsers={initialUsers}
           initialOrders={initialOrders}
           initialNotifications={initialNotifications}
+          initialSpinCategories={initialSpinCategories}
         />
       </main>
       <Footer />

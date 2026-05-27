@@ -68,7 +68,12 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
               </Link>
             </li>
 
-
+            <li className="font-medium list-none text-[14px] md:text-[17px]">
+              <Link href="/random" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
+                <i className="fa-solid fa-dice" />
+                <span>Quay Random</span>
+              </Link>
+            </li>
 
             {/* Username → Profile */}
             <li className="font-medium list-none">
@@ -112,7 +117,10 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
               <span>Shopping</span>
             </Link>
 
-
+            <Link href="/random" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
+              <i className="fa-solid fa-dice" />
+              <span>Quay Random</span>
+            </Link>
 
             <div className="pt-1">
               {isLoggedIn ? (
