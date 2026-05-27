@@ -1,28 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { jwtVerify, importJWK, decodeProtectedHeader } from "jose";
 import pool from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { RowDataPacket, ResultSetHeader } from "mysql2";
-
-const googleJWKS = createRemoteJWKSet(
-  new URL("https://www.googleapis.com/oauth2/v3/certs")
-);
 
 interface GoogleTokenPayload {
   sub: string;
   email?: string;
   name?: string;
   picture?: string;
-  aud: string;
+  aud: string | string[];
   iss: string;
-  exp: number;
-  iat: number;
 }
 
 interface UserRow extends RowDataPacket {
   id: number;
   username: string;
   role: "admin" | "npp" | "user";
+}
+
+interface JWK {
+  kty: string;
+  kid: string;
+  n: string;
+  e: string;
+  use: string;
+  alg: string;
+}
+
+interface JWKS {
+  keys: JWK[];
+}
+
+let jwksCache: JWKS | null = null;
+let jwksCacheTime = 0;
+const JWKS_CACHE_TTL = 3600_000; // 1 hour
+
+async function getGoogleJWKS(): Promise<JWKS> {
+  const now = Date.now();
+  if (jwksCache && now - jwksCacheTime < JWKS_CACHE_TTL) {
+    return jwksCache;
+  }
+  const res = await fetch("https://www.googleapis.com/oauth2/v3/certs");
+  if (!res.ok) {
+    throw new Error(`Failed to fetch Google JWKS: ${res.status} ${res.statusText}`);
+  }
+  const data = await res.json() as JWKS;
+  jwksCache = data;
+  jwksCacheTime = now;
+  return data;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,15 +60,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Thiếu mã xác thực Google." }, { status: 400 });
     }
 
-    const { payload: raw } = await jwtVerify(credential, googleJWKS, {
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      console.error("Missing GOOGLE_CLIENT_ID env var");
+      return NextResponse.json({ error: "Lỗi cấu hình server." }, { status: 500 });
+    }
+
+    const header = decodeProtectedHeader(credential);
+    if (!header.kid) {
+      return NextResponse.json({ error: "Token không có kid." }, { status: 401 });
+    }
+
+    const jwks = await getGoogleJWKS();
+    const jwk = jwks.keys.find((k) => k.kid === header.kid);
+    if (!jwk) {
+      return NextResponse.json({ error: "Không tìm thấy khóa public phù hợp." }, { status: 401 });
+    }
+
+    const publicKey = await importJWK(jwk as any, header.alg);
+
+    const { payload: raw } = await jwtVerify(credential, publicKey, {
       issuer: ["accounts.google.com", "https://accounts.google.com"],
-      audience: process.env.GOOGLE_CLIENT_ID,
+      audience: clientId,
     });
 
     const payload = raw as unknown as GoogleTokenPayload;
 
     if (!payload.sub) {
-      return NextResponse.json({ error: "Mã xác thực Google không hợp lệ." }, { status: 401 });
+      return NextResponse.json({ error: "Token không chứa sub." }, { status: 401 });
     }
 
     const googleId = payload.sub;
@@ -91,7 +136,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Google auth error:", err);
-    return NextResponse.json({ error: "Xác thực Google thất bại." }, { status: 401 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("Google auth error:", msg);
+    return NextResponse.json({ error: "Xác thực Google thất bại: " + msg }, { status: 401 });
   }
 }
