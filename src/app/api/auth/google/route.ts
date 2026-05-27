@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       }
 
       const [result] = await pool.query<ResultSetHeader>(
-        "INSERT INTO users (username, email, google_id, role, is_active) VALUES (?, ?, ?, 'user', 1)",
+        "INSERT INTO users (username, email, password_hash, google_id, role, is_active) VALUES (?, ?, '', ?, 'user', 1)",
         [baseUsername, email || null, googleId]
       );
 
