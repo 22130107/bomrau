@@ -12,7 +12,8 @@ interface User extends RowDataPacket {
   id: number;
   username: string;
   email: string | null;
-  password_hash: string;
+  password_hash: string | null;
+  google_id: string | null;
   role: "admin" | "npp" | "user";
   is_active: number;
 }
@@ -57,7 +58,7 @@ export async function loginAction(
 
   try {
     const [rows] = await pool.query<User[]>(
-      "SELECT id, username, email, password_hash, role, is_active FROM users WHERE username = ? LIMIT 1",
+      "SELECT id, username, email, password_hash, google_id, role, is_active FROM users WHERE username = ? LIMIT 1",
       [username]
     );
 
@@ -73,7 +74,11 @@ export async function loginAction(
       return { error: "Tài khoản của bạn đã bị khóa. Liên hệ admin để được hỗ trợ." };
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!user.password_hash && user.google_id) {
+      return { error: "Tài khoản này được tạo qua Google. Vui lòng đăng nhập bằng Google." };
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password_hash!);
     if (!passwordMatch) {
       return { error: "Tên đăng nhập hoặc mật khẩu không đúng." };
     }
