@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { spinAction } from "@/app/actions/random-spin";
+import { getBalanceAction } from "@/app/actions/auth";
 
 export interface SpinProduct {
   id: number;
@@ -38,6 +39,38 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: Random
   const [topupAmount, setTopupAmount] = useState("50000");
   const [showQR, setShowQR] = useState(false);
   const [copiedField, setCopiedField] = useState("");
+  const [displayBalance, setDisplayBalance] = useState(balance);
+  const [depositNotification, setDepositNotification] = useState<{ amount: number } | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const initialBalanceRef = useRef(balance);
+
+  // Poll balance after QR is shown to detect incoming deposit
+  useEffect(() => {
+    if (!showQR || !isLoggedIn) return;
+
+    const initial = displayBalance;
+    initialBalanceRef.current = initial;
+
+    pollingRef.current = setInterval(async () => {
+      const res = await getBalanceAction();
+      if (res.balance !== undefined && res.balance > initialBalanceRef.current) {
+        const deposited = res.balance - initialBalanceRef.current;
+        setDisplayBalance(res.balance);
+        setDepositNotification({ amount: deposited });
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = undefined;
+        }
+      }
+    }, 5000);
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = undefined;
+      }
+    };
+  }, [showQR, isLoggedIn]);
   const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "TPBANK";
   const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "08040125109";
   const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "TRINH HUU HUYNH";
@@ -90,7 +123,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: Random
   };
 
   const SPIN_COST = 10000;
-  const canSpin = isLoggedIn && balance >= SPIN_COST;
+  const canSpin = isLoggedIn && displayBalance >= SPIN_COST;
 
   return (
     <div className="flex flex-col items-center gap-6 md:gap-8 w-full max-w-[480px]">
@@ -102,7 +135,28 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: Random
             </div>
             <span className="text-[rgba(238,238,238,0.7)] text-[14px]">Số dư của bạn</span>
           </div>
-          <span className="text-[rgb(251,191,36)] text-[20px] md:text-[22px] font-bold tracking-wide">{balance.toLocaleString("vi-VN")}<span className="text-[15px] md:text-[16px]">đ</span></span>
+          <span className="text-[rgb(251,191,36)] text-[20px] md:text-[22px] font-bold tracking-wide">{displayBalance.toLocaleString("vi-VN")}<span className="text-[15px] md:text-[16px]">đ</span></span>
+        </div>
+      )}
+
+      {/* Deposit success notification */}
+      {depositNotification && (
+        <div className="w-full bg-[rgba(34,197,94,0.12)] border border-[rgb(34,197,94)] rounded-xl px-5 py-4 flex items-start gap-3 animate-fade-in-up">
+          <div className="w-10 h-10 rounded-full bg-[rgba(34,197,94,0.2)] flex items-center justify-center shrink-0">
+            <i className="fa-solid fa-circle-check text-[rgb(34,197,94)] text-[20px]" />
+          </div>
+          <div className="flex-1">
+            <p className="text-white text-[14px] font-bold">Nạp tiền thành công!</p>
+            <p className="text-[rgba(238,238,238,0.6)] text-[13px] mt-0.5">
+              Bạn vừa được cộng <span className="text-[rgb(34,197,94)] font-bold">{depositNotification.amount.toLocaleString("vi-VN")}đ</span> vào tài khoản.
+            </p>
+          </div>
+          <button
+            onClick={() => setDepositNotification(null)}
+            className="text-[rgba(238,238,238,0.3)] hover:text-white transition-colors shrink-0"
+          >
+            <i className="fa-solid fa-xmark text-[18px]" />
+          </button>
         </div>
       )}
       <div className="w-full">
