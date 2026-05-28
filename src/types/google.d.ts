@@ -1,3 +1,14 @@
+interface PromptMomentNotification {
+  isDisplayMoment(): boolean;
+  isNotDisplayed(): boolean;
+  isSkippedMoment(): boolean;
+  isDismissedMoment(): boolean;
+  getNotDisplayedReason(): string | undefined;
+  getSkippedReason(): string | undefined;
+  getDismissedReason(): "cancel" | "dismiss" | "credential_returned" | undefined;
+  getMomentType(): string;
+}
+
 interface Window {
   google?: {
     accounts: {
@@ -7,7 +18,7 @@ interface Window {
           callback: (response: { credential: string }) => void;
           cancel_on_tap_outside?: boolean;
         }) => void;
-        prompt: (momentListener?: (moment: string) => void) => void;
+        prompt: (momentListener?: (moment: PromptMomentNotification) => void) => void;
         renderButton: (
           element: HTMLElement,
           options: {
