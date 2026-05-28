@@ -133,17 +133,8 @@ export async function registerAction(
   }
 
   try {
-    // Fix user enumeration: không tiết lộ username đã tồn tại
-    // → dùng thông báo mơ hồ thay vì "Tên đăng nhập đã tồn tại"
-    const [existing] = await pool.query<User[]>(
-      "SELECT id FROM users WHERE username = ? LIMIT 1",
-      [username]
-    );
-    if (existing.length > 0) {
-      return {
-        error: "Tên đăng nhập này không khả dụng. Vui lòng chọn tên đăng nhập khác.",
-      };
-    }
+    // Không kiểm tra username tồn tại để tránh user enumeration
+    // Để UNIQUE constraint tự xử lý, nếu lỗi thì trả message mơ hồ
 
     const passwordHash = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
@@ -158,7 +149,7 @@ export async function registerAction(
     await createSession(insertId, username, "user");
   } catch (err) {
     console.error("Register error:", err);
-    return { error: "Lỗi kết nối server. Vui lòng thử lại sau." };
+    return { error: "Đăng ký không thành công. Vui lòng thử lại." };
   }
 
   redirect("/");
