@@ -1137,7 +1137,7 @@ export function AdminContent({
                       {p.fake_sold_count}
                     </td>
                     <td className="py-3 text-[rgb(34,197,94)] font-bold">
-                      {p.fake_remaining_count}
+                      {availableCountByProduct[p.id] || 0}
                     </td>
                     <td className="py-3">
                       <button
