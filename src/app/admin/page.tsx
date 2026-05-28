@@ -24,12 +24,24 @@ export default async function AdminPage() {
   const [unsoldAccountCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM accounts WHERE status = 'available'");
   const [soldAccountCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM accounts WHERE status = 'sold'");
   const [orderCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM orders");
+  const [monthlyRevenueRows] = await pool.query<RowDataPacket[]>(
+    `SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(amount) as total
+     FROM transactions
+     WHERE type = 'purchase' AND status = 'completed'
+     GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+     ORDER BY month ASC
+     LIMIT 12`
+  );
 
   const stats: AdminStats = {
     totalRevenue: Number(revenueRows[0].total) || 0,
     totalUnsoldAccounts: Number(unsoldAccountCountRows[0].total) || 0,
     totalSoldAccounts: Number(soldAccountCountRows[0].total) || 0,
     totalOrders: Number(orderCountRows[0].total) || 0,
+    monthlyRevenue: monthlyRevenueRows.map(r => ({
+      month: r.month,
+      total: Number(r.total) || 0,
+    })),
   };
 
   // Fetch Spin Categories

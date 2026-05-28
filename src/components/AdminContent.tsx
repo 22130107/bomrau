@@ -91,11 +91,17 @@ export interface AdminNotification {
   date: string;
 }
 
+export interface MonthlyRevenue {
+  month: string;
+  total: number;
+}
+
 export interface AdminStats {
   totalRevenue: number;
   totalUnsoldAccounts: number;
   totalSoldAccounts: number;
   totalOrders: number;
+  monthlyRevenue: MonthlyRevenue[];
 }
 
 export interface AdminProduct {
@@ -230,6 +236,10 @@ export function AdminContent({
       getAllProductOptions().then(setAllOptions);
     }
   }, [activeTab]);
+
+  // States
+  const [showRevenueChart, setShowRevenueChart] = useState(false);
+  const [selectedRevenueMonth, setSelectedRevenueMonth] = useState<string | null>(null);
 
   // States cho Sản phẩm
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -512,15 +522,19 @@ export function AdminContent({
 
       {/* Stats */}
       {activeTab === "stats" && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6 text-center">
-            <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">
-              Doanh thu
-            </p>
-            <p className="text-[rgb(251,191,36)] text-[18px] md:text-[24px] font-bold mt-1">
-              {stats.totalRevenue.toLocaleString("vi-VN")}đ
-            </p>
-          </div>
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <button
+              onClick={() => setShowRevenueChart(!showRevenueChart)}
+              className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6 text-center hover:border-[rgb(251,191,36)] transition-colors"
+            >
+              <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">
+                Doanh thu {showRevenueChart ? "▲" : "▼"}
+              </p>
+              <p className="text-[rgb(251,191,36)] text-[18px] md:text-[24px] font-bold mt-1">
+                {stats.totalRevenue.toLocaleString("vi-VN")}đ
+              </p>
+            </button>
           <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6 text-center">
             <p className="text-[rgba(238,238,238,0.6)] text-[12px] md:text-[14px]">
               Tài khoản trong kho
@@ -545,6 +559,59 @@ export function AdminContent({
               {stats.totalOrders}
             </p>
           </div>
+          </div>
+
+          {showRevenueChart && (
+            <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-[rgb(251,191,36)] font-bold text-[16px]">
+                  Doanh thu theo tháng
+                </h4>
+                <button
+                  onClick={() => setSelectedRevenueMonth(null)}
+                  className={`px-2 py-1 text-[11px] rounded transition-colors ${
+                    selectedRevenueMonth
+                      ? "bg-[rgb(59,130,246)] text-white"
+                      : "text-[rgba(238,238,238,0.4)]"
+                  }`}
+                >
+                  {selectedRevenueMonth ? "Tất cả" : "12 tháng"}
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {stats.monthlyRevenue.length === 0 && (
+                  <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-4">
+                    Chưa có dữ liệu doanh thu.
+                  </p>
+                )}
+                {stats.monthlyRevenue
+                  .filter(m => !selectedRevenueMonth || m.month === selectedRevenueMonth)
+                  .map(m => {
+                    const isSelected = selectedRevenueMonth === m.month;
+                    const maxTotal = Math.max(...stats.monthlyRevenue.map(x => x.total), 1);
+                    const pct = (m.total / maxTotal) * 100;
+                    const label = new Date(m.month + "-01").toLocaleDateString("vi-VN", {
+                      month: "short",
+                      year: "numeric",
+                    });
+                    return (
+                      <button
+                        key={m.month}
+                        onClick={() => setSelectedRevenueMonth(isSelected ? null : m.month)}
+                        className={`flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-[rgba(251,191,36,0.05)] ${isSelected ? "bg-[rgba(251,191,36,0.1)] border border-[rgba(251,191,36,0.3)]" : ""}`}
+                      >
+                        <span className="text-[rgba(238,238,238,0.7)] text-[13px] w-[90px] shrink-0 text-left">{label}</span>
+                        <div className="flex-1 h-6 bg-[rgb(17,24,39)] rounded-full overflow-hidden">
+                          <div className="h-full bg-gradient-to-r from-[rgb(202,138,4)] to-[rgb(251,191,36)] rounded-full transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%` }} />
+                        </div>
+                        <span className="text-[rgb(251,191,36)] text-[13px] font-bold w-[100px] shrink-0 text-right">{m.total.toLocaleString("vi-VN")}đ</span>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
