@@ -55,11 +55,55 @@ export function LoginForm() {
       cancel_on_tap_outside: false,
     });
 
-    google.accounts.id.prompt((moment) => {
-      if (moment === "cancel" || moment === "dismissed") {
-        setGoogleLoading(false);
+    // 1st attempt: try One Tap
+    google.accounts.id.prompt((notification) => {
+      if (notification.isDismissedMoment()) {
+        const reason = notification.getDismissedReason();
+        if (reason === "cancel" || reason === "dismiss") {
+          setGoogleLoading(false);
+        }
+      }
+      if (notification.isSkippedMoment() || notification.isNotDisplayed()) {
+        openFullPicker();
       }
     });
+
+    // 2nd attempt (parallel): if One Tap doesn't show within 3s, force full picker
+    const timeout = setTimeout(() => {
+      openFullPicker();
+    }, 3000);
+
+    let fullPickerOpened = false;
+
+    function openFullPicker() {
+      if (fullPickerOpened) return;
+      fullPickerOpened = true;
+      clearTimeout(timeout);
+
+      const wrapper = document.createElement("div");
+      wrapper.style.position = "fixed";
+      wrapper.style.opacity = "0";
+      wrapper.style.pointerEvents = "none";
+      wrapper.style.zIndex = "-1";
+      wrapper.style.height = "0";
+      wrapper.style.overflow = "hidden";
+      document.body.appendChild(wrapper);
+
+      google.accounts.id.renderButton(wrapper, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+      });
+
+      requestAnimationFrame(() => {
+        const btn = wrapper.querySelector<HTMLElement>(
+          'div[role="button"]'
+        );
+        if (btn) {
+          btn.click();
+        }
+      });
+    }
   }
 
   async function handleGoogleCredential(response: { credential: string }) {

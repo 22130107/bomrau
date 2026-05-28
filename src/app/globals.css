@@ -81,6 +81,7 @@
 
 body {
   background-image: radial-gradient(rgb(17, 24, 39), rgb(31, 41, 55));
+  -webkit-tap-highlight-color: transparent;
 }
 
 @utility clip-diagonal {

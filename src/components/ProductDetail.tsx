@@ -151,7 +151,7 @@ export function ProductDetail({
                 className={`items-center flex font-bold justify-center text-center mx-auto w-[180px] md:w-[200px] h-[50px] md:h-[60px] mt-[16px] border-[rgb(251,191,36)] border rounded-lg text-[16px] md:text-[18px] transition-colors ${
                   isOutOfStock 
                     ? 'bg-[rgb(107,114,128)] text-[rgb(75,85,99)] border-[rgb(75,85,99)] cursor-not-allowed'
-                    : 'text-[rgb(251,191,36)] hover:bg-[rgb(251,191,36)] hover:text-black cursor-pointer'
+                    : 'text-[rgb(251,191,36)] hover:bg-[rgb(251,191,36)] hover:text-black active:bg-[rgb(251,191,36)] active:text-black cursor-pointer touch-manipulation'
                 }`}
               >
                 {isOutOfStock ? "HẾT HÀNG" : "MUA NGAY"}
