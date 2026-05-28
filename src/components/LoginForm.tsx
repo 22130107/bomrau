@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useRef, useActionState } from "react";
 import { loginAction, registerAction, AuthState } from "@/app/actions/auth";
 
 export function LoginForm() {
@@ -17,6 +17,9 @@ export function LoginForm() {
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [showGoogleButton, setShowGoogleButton] = useState(false);
+  const googleContainerRef = useRef<HTMLDivElement>(null);
+  const fullPickerOpenedRef = useRef(false);
 
   const error = googleError || (isLogin ? loginState?.error : registerState?.error);
   const isPending = isLogin ? loginPending : registerPending;
@@ -24,6 +27,7 @@ export function LoginForm() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     setGoogleError(null);
+    setShowGoogleButton(false);
 
     if (!window.google) {
       const script = document.createElement("script");
@@ -55,6 +59,8 @@ export function LoginForm() {
       cancel_on_tap_outside: false,
     });
 
+    fullPickerOpenedRef.current = false;
+
     // 1st attempt: try One Tap
     google.accounts.id.prompt((notification) => {
       if (notification.isDismissedMoment()) {
@@ -68,39 +74,28 @@ export function LoginForm() {
       }
     });
 
-    // 2nd attempt (parallel): if One Tap doesn't show within 3s, force full picker
+    // 2nd attempt (parallel): if One Tap doesn't show within 3s, show visible Google button
     const timeout = setTimeout(() => {
       openFullPicker();
     }, 3000);
 
-    let fullPickerOpened = false;
-
     function openFullPicker() {
-      if (fullPickerOpened) return;
-      fullPickerOpened = true;
+      if (fullPickerOpenedRef.current) return;
+      fullPickerOpenedRef.current = true;
       clearTimeout(timeout);
 
-      const wrapper = document.createElement("div");
-      wrapper.style.position = "fixed";
-      wrapper.style.opacity = "0";
-      wrapper.style.pointerEvents = "none";
-      wrapper.style.zIndex = "-1";
-      wrapper.style.height = "0";
-      wrapper.style.overflow = "hidden";
-      document.body.appendChild(wrapper);
+      setGoogleLoading(false);
+      setShowGoogleButton(true);
 
-      google!.accounts.id.renderButton(wrapper, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-      });
-
+      // Render Google button when DOM is ready
       requestAnimationFrame(() => {
-        const btn = wrapper.querySelector<HTMLElement>(
-          'div[role="button"]'
-        );
-        if (btn) {
-          btn.click();
+        if (googleContainerRef.current && google) {
+          googleContainerRef.current.innerHTML = "";
+          google.accounts.id.renderButton(googleContainerRef.current, {
+            type: "standard",
+            theme: "outline",
+            size: "large",
+          });
         }
       });
     }
@@ -316,6 +311,11 @@ export function LoginForm() {
           </svg>
           {googleLoading ? "Đang xác thực..." : "Đăng nhập bằng Google"}
         </button>
+
+        {/* Google rendered button (fallback khi One Tap không hiển thị) */}
+        {showGoogleButton && (
+          <div className="w-full flex justify-center mt-4" ref={googleContainerRef} />
+        )}
 
         {/* Session info */}
         <div className="mt-5 flex items-center gap-2 justify-center">
