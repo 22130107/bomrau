@@ -54,12 +54,12 @@ export async function getNppDataAction(): Promise<NppDataResponse> {
     const [orders] = await pool.query<RowDataPacket[]>(
       `SELECT 
         o.id, 
-        p.title as name, 
+        COALESCE(p.title, 'Sản phẩm đã xoá') as name, 
         u.username as buyer, 
         o.amount as price, 
         DATE_FORMAT(o.created_at, '%d/%m/%Y %H:%i') as date 
       FROM orders o 
-      JOIN products p ON o.product_id = p.id 
+      LEFT JOIN products p ON o.product_id = p.id 
       JOIN users u ON o.user_id = u.id 
       WHERE o.distributor_id = ? AND o.status = 'completed' 
       ORDER BY o.created_at DESC`,

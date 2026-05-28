@@ -63,10 +63,10 @@ export default async function ProfilePage() {
 
   // ── 3. Lịch sử mua hàng (kèm trạng thái đơn) ─────────────────────────────
   const [orderRows] = await pool.query<OrderRow[]>(
-    `SELECT o.id, p.title AS product_title, o.amount, o.status, o.created_at,
+    `SELECT o.id, COALESCE(p.title, 'Sản phẩm đã xoá') AS product_title, o.amount, o.status, o.created_at,
             a.login_username, a.login_password
      FROM orders o
-     JOIN products p ON o.product_id = p.id
+     LEFT JOIN products p ON o.product_id = p.id
      LEFT JOIN accounts a ON o.account_id = a.id
      WHERE o.user_id = ?
      ORDER BY o.created_at DESC
