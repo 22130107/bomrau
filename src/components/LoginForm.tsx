@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useActionState } from "react";
+import { useState, useRef, useEffect, useActionState } from "react";
 import { loginAction, registerAction, AuthState } from "@/app/actions/auth";
 
 export function LoginForm() {
@@ -24,6 +24,36 @@ export function LoginForm() {
   const error = googleError || (isLogin ? loginState?.error : registerState?.error);
   const isPending = isLogin ? loginPending : registerPending;
 
+  // Xử lý redirect callback từ Google Sign-In (mobile)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash) return;
+    const params = new URLSearchParams(hash.replace("#", ""));
+    const credential = params.get("id_token") || params.get("credential");
+    if (!credential) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    setGoogleLoading(true);
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/google", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ credential }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          window.location.href = "/";
+        } else {
+          setGoogleError(data.error || "Đăng nhập Google thất bại.");
+          setGoogleLoading(false);
+        }
+      } catch {
+        setGoogleError("Lỗi kết nối server. Vui lòng thử lại sau.");
+        setGoogleLoading(false);
+      }
+    })();
+  }, []);
+
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     setGoogleError(null);
@@ -45,6 +75,18 @@ export function LoginForm() {
     }
   }
 
+  useEffect(() => {
+    if (!showGoogleButton || !googleContainerRef.current || !window.google) return;
+    googleContainerRef.current.innerHTML = "";
+    window.google.accounts.id.renderButton(googleContainerRef.current, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+    });
+  }, [showGoogleButton]);
+
+  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   function promptGoogleLogin() {
     const google = window.google;
     if (!google) {
@@ -59,9 +101,16 @@ export function LoginForm() {
       cancel_on_tap_outside: false,
     });
 
+    if (isMobile) {
+      // Mobile: One Tap rarely hiển thị → show nút Google luôn
+      setGoogleLoading(false);
+      setShowGoogleButton(true);
+      return;
+    }
+
+    // Desktop: thử One Tap trước
     fullPickerOpenedRef.current = false;
 
-    // 1st attempt: try One Tap
     google.accounts.id.prompt((notification) => {
       if (notification.isDismissedMoment()) {
         const reason = notification.getDismissedReason();
@@ -74,7 +123,6 @@ export function LoginForm() {
       }
     });
 
-    // 2nd attempt (parallel): if One Tap doesn't show within 3s, show visible Google button
     const timeout = setTimeout(() => {
       openFullPicker();
     }, 3000);
@@ -83,21 +131,8 @@ export function LoginForm() {
       if (fullPickerOpenedRef.current) return;
       fullPickerOpenedRef.current = true;
       clearTimeout(timeout);
-
       setGoogleLoading(false);
       setShowGoogleButton(true);
-
-      // Render Google button when DOM is ready
-      requestAnimationFrame(() => {
-        if (googleContainerRef.current && google) {
-          googleContainerRef.current.innerHTML = "";
-          google.accounts.id.renderButton(googleContainerRef.current, {
-            type: "standard",
-            theme: "outline",
-            size: "large",
-          });
-        }
-      });
     }
   }
 
