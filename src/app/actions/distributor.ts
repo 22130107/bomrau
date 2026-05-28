@@ -109,6 +109,28 @@ export async function updateDistributorAction(id: number, data: DistributorFormD
   }
 }
 
+export async function updateDistributorFeeAction(id: number, adminFeePercent: number) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") return { error: "Unauthorized" };
+
+    if (adminFeePercent < 0 || adminFeePercent > 100) {
+      return { error: "Phần trăm phải từ 0 đến 100" };
+    }
+
+    await pool.query(
+      "UPDATE distributors SET admin_fee_percent = ? WHERE id = ?",
+      [adminFeePercent, id]
+    );
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Update distributor fee error:", error);
+    return { error: "Lỗi hệ thống: " + (error.message || "Unknown error") };
+  }
+}
+
 export async function toggleDistributorStatusAction(id: number) {
   try {
     const session = await getSession();

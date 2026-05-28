@@ -60,6 +60,7 @@ import {
 import {
   createDistributorAction,
   updateDistributorAction,
+  updateDistributorFeeAction,
   toggleDistributorStatusAction,
   DistributorFormData,
 } from "@/app/actions/distributor";
@@ -156,6 +157,8 @@ export interface AdminDistributor {
   email: string;
   totalSupplied: number;
   is_active: boolean;
+  adminFeePercent: number;
+  totalCostPrice: number;
 }
 
 export interface AdminUser {
@@ -2526,7 +2529,13 @@ export function AdminContent({
                     Tên miền
                   </th>
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
-                    Đã bán qua NPP
+                    Đã bán
+                  </th>
+                  <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
+                    Phí %
+                  </th>
+                  <th className="text-left py-3 text-[rgba(238,238,238,0.6)] hidden md:table-cell">
+                    Doanh thu
                   </th>
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
                     Trạng thái
@@ -2552,6 +2561,37 @@ export function AdminContent({
                     </td>
                     <td className="py-3 text-white font-bold">
                       {d.totalSupplied} acc
+                    </td>
+                    <td className="py-3">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={d.adminFeePercent}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            if (val >= 0 && val <= 100) {
+                              startTransition(async () => {
+                                await updateDistributorFeeAction(d.id, val);
+                              });
+                            }
+                          }}
+                          className="w-14 px-1.5 py-1 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded text-white text-[13px] text-center outline-none focus:border-[rgb(251,191,36)]"
+                        />
+                        <span className="text-[rgba(238,238,238,0.5)] text-[12px]">%</span>
+                      </div>
+                    </td>
+                    <td className="py-3 text-white hidden md:table-cell">
+                      {(() => {
+                        const fee = d.adminFeePercent / 100;
+                        const revenue = d.totalCostPrice * (1 - fee);
+                        return (
+                          <span className="text-[rgb(34,197,94)] font-bold">
+                            {revenue.toLocaleString("vi-VN")}đ
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3">
                       <span

@@ -144,8 +144,9 @@ export default async function AdminPage() {
 
   // 4. Fetch Distributors
   const [distributorRows] = await pool.query<RowDataPacket[]>(`
-    SELECT d.id, d.name, d.domain, d.phone, d.email, d.is_active,
-           (SELECT COUNT(*) FROM orders o WHERE o.distributor_id = d.id AND o.status = 'completed') as totalSupplied
+    SELECT d.id, d.name, d.domain, d.phone, d.email, d.is_active, d.admin_fee_percent,
+           (SELECT COUNT(*) FROM orders o WHERE o.distributor_id = d.id AND o.status = 'completed') as totalSupplied,
+           (SELECT COALESCE(SUM(a.cost_price), 0) FROM accounts a WHERE a.distributor_id = d.id AND a.status = 'sold') as totalCostPrice
     FROM distributors d
     ORDER BY d.id DESC
   `);
@@ -158,6 +159,8 @@ export default async function AdminPage() {
     email: row.email || "",
     totalSupplied: Number(row.totalSupplied),
     is_active: Boolean(row.is_active),
+    adminFeePercent: Number(row.admin_fee_percent) || 0,
+    totalCostPrice: Number(row.totalCostPrice) || 0,
   }));
 
   // 5. Fetch Users
