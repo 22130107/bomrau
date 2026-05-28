@@ -304,6 +304,7 @@ export function AdminContent({
     login_password: "",
     cost_price: 0,
     note: "",
+    distributor_id: null as number | null,
   });
 
   const filteredProducts = initialProducts.filter((p) => {
@@ -1161,6 +1162,7 @@ export function AdminContent({
                         login_password: "",
                         cost_price: 0,
                         note: "",
+                        distributor_id: null,
                       });
                     }}
                   >
@@ -1321,7 +1323,7 @@ export function AdminContent({
                           </h5>
 
                           {/* Form thêm tài khoản */}
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-4">
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
                             <div className="flex flex-col gap-1">
                               <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Tài khoản ĐN *</label>
                               <input
@@ -1345,6 +1347,26 @@ export function AdminContent({
                               />
                             </div>
                             <div className="flex flex-col gap-1">
+                              <label className="text-[11px] text-[rgba(238,238,238,0.6)]">NPP</label>
+                              <select
+                                value={productAccountForm.distributor_id ?? ""}
+                                onChange={(e) =>
+                                  setProductAccountForm({
+                                    ...productAccountForm,
+                                    distributor_id: Number(e.target.value) || null,
+                                  })
+                                }
+                                className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+                              >
+                                <option value="">-- Không --</option>
+                                {initialDistributors.filter(d => d.is_active).map((d) => (
+                                  <option key={d.id} value={d.id}>
+                                    {d.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="flex flex-col gap-1">
                               <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Ghi chú</label>
                               <div className="flex gap-1">
                                 <input
@@ -1365,7 +1387,7 @@ export function AdminContent({
                                     startTransition(async () => {
                                       const res = await createAccountAction({
                                         product_id: p.id,
-                                        distributor_id: null,
+                                        distributor_id: productAccountForm.distributor_id,
                                         login_username: productAccountForm.login_username,
                                         login_password: productAccountForm.login_password,
                                         cost_price: 0,
@@ -1379,6 +1401,7 @@ export function AdminContent({
                                           login_password: "",
                                           cost_price: 0,
                                           note: "",
+                                          distributor_id: null,
                                         });
                                       }
                                     });
@@ -1425,7 +1448,7 @@ export function AdminContent({
                                         if (!username || !password) { errors++; continue; }
                                         const res = await createAccountAction({
                                           product_id: p.id,
-                                          distributor_id: null,
+                                          distributor_id: productAccountForm.distributor_id,
                                           login_username: username,
                                           login_password: password,
                                           cost_price: 0,
@@ -1661,6 +1684,28 @@ export function AdminContent({
                     }
                     className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
                   />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">
+                    Nhà phân phối <span className="text-[rgba(238,238,238,0.3)]">(NPP)</span>
+                  </label>
+                  <select
+                    value={accountForm.distributor_id ?? ""}
+                    onChange={(e) =>
+                      setAccountForm({
+                        ...accountForm,
+                        distributor_id: Number(e.target.value) || null,
+                      })
+                    }
+                    className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                  >
+                    <option value="">-- Không có NPP --</option>
+                    {initialDistributors.filter(d => d.is_active).map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-col gap-1 md:col-span-3">
                   <label className="text-[12px] text-[rgba(238,238,238,0.6)]">

@@ -80,7 +80,7 @@ export default async function CategoryPage({
                       price={Number(product.price)}
                       originalPrice={Number(product.originalPrice)}
                       discount={Number(product.discount)}
-                      image={product.image_url || category.image_url}
+                      image={product.image_url || category.image_url || ""}
                       sold={Number(product.sold) || undefined}
                       remaining={Number(product.remaining) || undefined}
                       href={`/category/${slug}/detail.html?id=${product.id}`}
