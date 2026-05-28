@@ -89,7 +89,7 @@ export function LoginForm() {
       wrapper.style.overflow = "hidden";
       document.body.appendChild(wrapper);
 
-      google.accounts.id.renderButton(wrapper, {
+      google!.accounts.id.renderButton(wrapper, {
         type: "standard",
         theme: "outline",
         size: "large",
