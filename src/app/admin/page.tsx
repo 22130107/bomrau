@@ -20,7 +20,7 @@ export default async function AdminPage() {
   }
 
   // 1. Fetch Stats
-  const [revenueRows] = await pool.query<RowDataPacket[]>("SELECT SUM(amount) as total FROM orders WHERE status = 'completed'");
+  const [revenueRows] = await pool.query<RowDataPacket[]>("SELECT SUM(amount) as total FROM transactions WHERE type = 'purchase' AND status = 'completed'");
   const [unsoldAccountCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM accounts WHERE status = 'available'");
   const [soldAccountCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM accounts WHERE status = 'sold'");
   const [orderCountRows] = await pool.query<RowDataPacket[]>("SELECT COUNT(*) as total FROM orders");
