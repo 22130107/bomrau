@@ -155,3 +155,22 @@ export async function deleteProductAction(id: number) {
     return { error: "Lỗi hệ thống" };
   }
 }
+
+export async function deleteMultipleProductsAction(ids: number[]) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") return { error: "Unauthorized" };
+
+    if (ids.length === 0) return { error: "Chưa chọn sản phẩm nào" };
+
+    const placeholders = ids.map(() => "?").join(",");
+    await pool.query(`DELETE FROM products WHERE id IN (${placeholders})`, ids);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Delete multiple products error:", error);
+    return { error: "Lỗi hệ thống" };
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useTransition, useEffect } from "react";
+import React, { useState, useRef, useTransition, useEffect, useMemo } from "react";
 import {
   createCategoryAction,
   updateCategoryAction,
@@ -10,6 +10,7 @@ import {
   createProductAction,
   updateProductAction,
   deleteProductAction,
+  deleteMultipleProductsAction,
   togglePinProductAction,
   ProductFormData,
 } from "@/app/actions/product";
@@ -264,6 +265,19 @@ export function AdminContent({
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState(0);
   const [productStatusFilter, setProductStatusFilter] = useState<string>("all");
+  const [productAccountFilter, setProductAccountFilter] = useState<string>("all");
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
+
+  const availableCountByProduct = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const a of initialAccounts) {
+      if (a.status === "available") {
+        map[a.product_id] = (map[a.product_id] || 0) + 1;
+      }
+    }
+    return map;
+  }, [initialAccounts]);
 
   // States cho Kho (thêm account từ sản phẩm)
   const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
@@ -285,8 +299,31 @@ export function AdminContent({
       productCategoryFilter === 0 || p.category_id === productCategoryFilter;
     const matchesStatus =
       productStatusFilter === "all" || p.status === productStatusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
+    const availCount = availableCountByProduct[p.id] || 0;
+    const matchesAccount =
+      productAccountFilter === "all" ||
+      (productAccountFilter === "available" && availCount > 0) ||
+      (productAccountFilter === "out" && availCount === 0);
+    return matchesSearch && matchesCategory && matchesStatus && matchesAccount;
   });
+
+  function toggleSelectProduct(id: number) {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    const allSelected = filteredProducts.length > 0 && filteredProducts.every((p) => selectedProductIds.has(p.id));
+    if (allSelected) {
+      setSelectedProductIds(new Set());
+    } else {
+      setSelectedProductIds(new Set(filteredProducts.map((p) => p.id)));
+    }
+  }
 
   // States cho Tài khoản
   const [showAddAccount, setShowAddAccount] = useState(false);
@@ -962,14 +999,63 @@ export function AdminContent({
               <option value="available">Đang hiện</option>
               <option value="hidden">Ẩn</option>
             </select>
+            <select
+              value={productAccountFilter}
+              onChange={(e) => setProductAccountFilter(e.target.value)}
+              className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            >
+              <option value="all">Tất cả số lượng</option>
+              <option value="available">Còn acc</option>
+              <option value="out">Hết acc</option>
+            </select>
             <span className="flex items-center text-[12px] text-[rgba(238,238,238,0.5)] whitespace-nowrap">
               {filteredProducts.length}/{initialProducts.length} sản phẩm
             </span>
+            <button
+              onClick={() => { setSelectionMode(!selectionMode); setSelectedProductIds(new Set()); }}
+              className={`px-3 py-2 text-[12px] font-bold rounded-lg transition-colors ${
+                selectionMode
+                  ? "bg-[rgb(251,191,36)] text-black"
+                  : "bg-[rgb(55,65,81)] text-white hover:bg-[rgb(75,85,99)]"
+              }`}
+            >
+              {selectionMode ? "Thoát chọn" : "Chọn nhiều"}
+            </button>
+            {selectionMode && selectedProductIds.size > 0 && (
+              <button
+                disabled={isPending}
+                onClick={() => {
+                  if (confirm(`Xóa ${selectedProductIds.size} sản phẩm đã chọn? Toàn bộ tài khoản thuộc các sản phẩm này cũng sẽ bị xóa!`)) {
+                    startTransition(async () => {
+                      const res = await deleteMultipleProductsAction([...selectedProductIds]);
+                      if (res.error) alert(res.error);
+                      else {
+                        setSelectedProductIds(new Set());
+                        alert(`Đã xóa ${selectedProductIds.size} sản phẩm.`);
+                      }
+                    });
+                  }
+                }}
+                className="px-3 py-2 bg-[rgb(220,38,38)] text-white text-[12px] font-bold rounded-lg hover:bg-[rgb(185,28,28)] transition-colors disabled:opacity-50"
+              >
+                Xóa đã chọn ({selectedProductIds.size})
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
               <thead>
                 <tr className="border-b border-[rgb(75,85,99)]">
+                  {selectionMode && (
+                    <th className="w-10 py-3">
+                      <input
+                        type="checkbox"
+                        checked={filteredProducts.length > 0 && filteredProducts.every((p) => selectedProductIds.has(p.id))}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 accent-[rgb(251,191,36)] cursor-pointer"
+                      />
+                    </th>
+                  )}
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">
                     ID
                   </th>
@@ -1002,7 +1088,7 @@ export function AdminContent({
               <tbody>
                 {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
+                    <td colSpan={10} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
                       Không tìm thấy sản phẩm phù hợp.
                     </td>
                   </tr>
@@ -1026,6 +1112,17 @@ export function AdminContent({
                       });
                     }}
                   >
+                    {selectionMode && (
+                      <td className="py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedProductIds.has(p.id)}
+                          onChange={() => toggleSelectProduct(p.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 accent-[rgb(251,191,36)] cursor-pointer"
+                        />
+                      </td>
+                    )}
                     <td className="py-3 text-white">#{p.id}</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">
                       {p.title}
@@ -1062,15 +1159,39 @@ export function AdminContent({
                       </button>
                     </td>
                     <td className="py-3">
-                      <span
-                        className={`px-2 py-1 rounded text-[11px] font-bold ${
+                      <button
+                        disabled={isPending}
+                        onClick={() => {
+                          startTransition(async () => {
+                            const newStatus = p.status === "available" ? "hidden" : "available";
+                            const res = await updateProductAction(p.id, {
+                              title: p.title,
+                              category_id: p.category_id,
+                              image_url: p.image_url,
+                              price: p.price,
+                              original_price: p.original_price,
+                              discount_percent: p.discount_percent,
+                              fake_sold_count: p.fake_sold_count,
+                              fake_remaining_count: p.fake_remaining_count,
+                              status: newStatus,
+                              is_pinned: p.is_pinned,
+                              pet_tim: p.pet_tim || "",
+                              san_tim: p.san_tim || "",
+                              chuong: p.chuong || "",
+                              extra_info: p.extra_info || "",
+                            } as any);
+                            if (res.error) alert(res.error);
+                          });
+                        }}
+                        className={`px-2 py-1 rounded text-[11px] font-bold border transition-colors ${
                           p.status === "available"
-                            ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]"
-                            : "bg-[rgba(107,114,128,0.2)] text-[rgb(156,163,175)]"
+                            ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)] border-[rgb(34,197,94,0.3)] hover:bg-[rgba(34,197,94,0.3)]"
+                            : "bg-[rgba(107,114,128,0.2)] text-[rgb(156,163,175)] border-[rgb(107,114,128,0.3)] hover:bg-[rgba(107,114,128,0.3)]"
                         }`}
+                        title={p.status === "available" ? "Click để ẩn" : "Click để hiện"}
                       >
                         {p.status === "available" ? "Đang hiện" : "Ẩn"}
-                      </span>
+                      </button>
                     </td>
                     <td className="py-3">
                       <div className="flex gap-1">
