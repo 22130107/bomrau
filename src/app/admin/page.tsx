@@ -145,7 +145,7 @@ export default async function AdminPage() {
   // 4. Fetch Distributors
   const [distributorRows] = await pool.query<RowDataPacket[]>(`
     SELECT d.id, d.name, d.domain, d.phone, d.email, d.is_active,
-           (SELECT COUNT(*) FROM accounts a WHERE a.distributor_id = d.id AND a.status = 'sold') as totalSupplied
+           (SELECT COUNT(*) FROM orders o WHERE o.distributor_id = d.id AND o.status = 'completed') as totalSupplied
     FROM distributors d
     ORDER BY d.id DESC
   `);
