@@ -34,8 +34,8 @@ export default async function CategoryPage({
   const category = categories[0];
 
   const [countResult] = await pool.query<RowDataPacket[]>(
-    "SELECT COUNT(*) as total FROM products WHERE category_id = ? AND status = 'available' AND EXISTS (SELECT 1 FROM accounts WHERE product_id = products.id AND status = 'available')",
-    [category.id]
+    "SELECT COUNT(*) as total FROM products WHERE status = 'available' AND (category_id = ? OR JSON_CONTAINS(extra_categories, CAST(? AS JSON))) AND EXISTS (SELECT 1 FROM accounts WHERE product_id = products.id AND status = 'available')",
+    [category.id, category.id]
   );
   const totalProducts = countResult[0].total;
   const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
@@ -48,10 +48,10 @@ export default async function CategoryPage({
     SELECT id, title as name, image_url, original_price as originalPrice, price, discount_percent as discount,
            fake_sold_count as sold, fake_remaining_count as remaining
     FROM products 
-    WHERE category_id = ? AND status = 'available' AND EXISTS (SELECT 1 FROM accounts WHERE product_id = products.id AND status = 'available')
+    WHERE status = 'available' AND (category_id = ? OR JSON_CONTAINS(extra_categories, CAST(? AS JSON))) AND EXISTS (SELECT 1 FROM accounts WHERE product_id = products.id AND status = 'available')
     ORDER BY is_pinned DESC, price ASC
     LIMIT ? OFFSET ?
-  `, [category.id, ITEMS_PER_PAGE, offset]);
+  `, [category.id, category.id, ITEMS_PER_PAGE, offset]);
 
   return (
     <div className="pt-[70px] md:pt-[90px]">

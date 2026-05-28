@@ -7,6 +7,7 @@ import { RowDataPacket } from "mysql2";
 
 export interface ProductFormData {
   category_id: number;
+  extra_categories: number[];
   title: string;
   image_url: string;
   price: number;
@@ -40,11 +41,11 @@ export async function createProductAction(data: ProductFormData) {
 
     const [result] = await pool.query(
       `INSERT INTO products (
-        category_id, title, image_url, price, original_price, discount_percent, 
+        category_id, extra_categories, title, image_url, price, original_price, discount_percent, 
         fake_sold_count, fake_remaining_count, status, is_pinned, pet_tim, san_tim, chuong, extra_info
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        data.category_id, data.title, data.image_url || "", data.price, data.original_price || 0,
+        data.category_id, JSON.stringify(data.extra_categories || []), data.title, data.image_url || "", data.price, data.original_price || 0,
         Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
         data.status || "available", data.is_pinned ? 1 : 0, data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null
       ]
@@ -101,12 +102,12 @@ export async function updateProductAction(id: number, data: ProductFormData) {
 
     await pool.query(
       `UPDATE products SET 
-        category_id=?, title=?, image_url=?, price=?, original_price=?, 
+        category_id=?, extra_categories=?, title=?, image_url=?, price=?, original_price=?, 
         discount_percent=?, fake_sold_count=?, fake_remaining_count=?, status=?, is_pinned=?,
         pet_tim=?, san_tim=?, chuong=?, extra_info=?
       WHERE id=?`,
       [
-        data.category_id, data.title, data.image_url || "", data.price, data.original_price || 0,
+        data.category_id, JSON.stringify(data.extra_categories || []), data.title, data.image_url || "", data.price, data.original_price || 0,
         Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
         data.status || "available", data.is_pinned ? 1 : 0, data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null, id
       ]

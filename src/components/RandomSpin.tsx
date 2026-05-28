@@ -22,9 +22,10 @@ interface RandomSpinProps {
   userId: number | null;
   balance: number;
   spinProducts: SpinProduct[];
+  spinCost?: number;
 }
 
-export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: RandomSpinProps) {
+export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost = 10000 }: RandomSpinProps) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "result" | "error">("idle");
   const [result, setResult] = useState<{
     category: { name: string; slug: string; image_url: string };
@@ -122,8 +123,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: Random
     setProgress(100);
   };
 
-  const SPIN_COST = 10000;
-  const canSpin = isLoggedIn && displayBalance >= SPIN_COST;
+  const canSpin = isLoggedIn && displayBalance >= spinCost;
 
   return (
     <div className="flex flex-col items-center gap-6 md:gap-8 w-full max-w-[480px]">
@@ -167,7 +167,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: Random
               Quay Random may mắn!
             </p>
             <p className="text-[rgba(238,238,238,0.5)] text-[14px]">
-              Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{SPIN_COST.toLocaleString("vi-VN")}đ</span> / lượt
+              Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{spinCost.toLocaleString("vi-VN")}đ</span> / lượt
             </p>
             {!isLoggedIn && (
               <Link href="/login" className="text-[rgb(59,130,246)] text-[14px] font-semibold hover:underline">
@@ -289,7 +289,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts }: Random
           disabled={!canSpin}
           className="w-full max-w-[320px] px-8 py-3.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-[18px] md:text-[22px] rounded-lg md:rounded-none md:clip-button transition-all duration-200"
         >
-           QUAY RANDOM - {SPIN_COST.toLocaleString("vi-VN")}đ
+           QUAY RANDOM - {spinCost.toLocaleString("vi-VN")}đ
         </button>
       )}
 

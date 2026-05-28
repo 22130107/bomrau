@@ -6,7 +6,16 @@ import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 import { headers } from "next/headers";
 
-const SPIN_COST = 10000;
+async function getSpinCostFromDB(): Promise<number> {
+  try {
+    const [rows] = await pool.query<RowDataPacket[]>(
+      "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
+    );
+    return rows.length > 0 ? Number(rows[0].value) : 10000;
+  } catch {
+    return 10000;
+  }
+}
 
 export async function spinAction() {
   try {
@@ -15,6 +24,8 @@ export async function spinAction() {
       return { error: "Vui lòng đăng nhập để quay random." };
     }
     const userId = session.userId;
+
+    const spinCost = await getSpinCostFromDB();
 
     const connection = await pool.getConnection();
     try {
@@ -30,9 +41,9 @@ export async function spinAction() {
         return { error: "Không tìm thấy thông tin tài khoản." };
       }
       const balance = Number(users[0].balance);
-      if (balance < SPIN_COST) {
+      if (balance < spinCost) {
         await connection.rollback();
-        return { error: `Số dư không đủ. Cần ít nhất ${SPIN_COST.toLocaleString("vi-VN")}đ để quay.` };
+        return { error: `Số dư không đủ. Cần ít nhất ${spinCost.toLocaleString("vi-VN")}đ để quay.` };
       }
 
       // 2. Chon random 1 account tu cac danh muc duoc phep quay
@@ -43,9 +54,16 @@ export async function spinAction() {
         FROM accounts a
         JOIN products p ON a.product_id = p.id
         JOIN categories c ON p.category_id = c.id
-        WHERE c.is_spin_enabled = 1
-          AND a.status = 'available'
+        WHERE a.status = 'available'
           AND p.status = 'available'
+          AND (
+            c.is_spin_enabled = 1
+            OR EXISTS (
+              SELECT 1 FROM categories ec
+              WHERE ec.is_spin_enabled = 1
+                AND JSON_CONTAINS(p.extra_categories, CAST(ec.id AS JSON))
+            )
+          )
         ORDER BY RAND()
         LIMIT 1
         FOR UPDATE
@@ -57,7 +75,7 @@ export async function spinAction() {
       }
 
       const account = accounts[0];
-      const price = SPIN_COST;
+      const price = spinCost;
 
       // 3. Tru tien user
       await connection.query(

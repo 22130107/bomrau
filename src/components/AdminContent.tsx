@@ -69,6 +69,8 @@ import {
 } from "@/app/actions/admin-user";
 import {
   toggleCategorySpinAction,
+  getSpinCostAction,
+  updateSpinCostAction,
 } from "@/app/actions/admin-spin";
 import { AutocompleteField } from "@/components/AutocompleteField";
 import {
@@ -99,6 +101,7 @@ export interface AdminStats {
 export interface AdminProduct {
   id: number;
   category_id: number;
+  extra_categories: number[];
   title: string;
   image_url: string;
   price: number;
@@ -235,6 +238,7 @@ export function AdminContent({
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     category_id: 0,
+    extra_categories: [],
     image_url: "",
     price: 0,
     original_price: 0,
@@ -262,6 +266,17 @@ export function AdminContent({
   }, [showAddProduct]);
 
   // States cho lọc sản phẩm
+  const [spinCost, setSpinCost] = useState(10000);
+  const [spinCostInput, setSpinCostInput] = useState("10000");
+  const [savingSpinCost, setSavingSpinCost] = useState(false);
+
+  useEffect(() => {
+    getSpinCostAction().then((res) => {
+      setSpinCost(res.cost);
+      setSpinCostInput(String(res.cost));
+    });
+  }, []);
+
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState(0);
   const [productStatusFilter, setProductStatusFilter] = useState<string>("all");
@@ -296,7 +311,7 @@ export function AdminContent({
       .toLowerCase()
       .includes(productSearchTerm.toLowerCase());
     const matchesCategory =
-      productCategoryFilter === 0 || p.category_id === productCategoryFilter;
+      productCategoryFilter === 0 || p.category_id === productCategoryFilter || p.extra_categories.includes(productCategoryFilter);
     const matchesStatus =
       productStatusFilter === "all" || p.status === productStatusFilter;
     const availCount = availableCountByProduct[p.id] || 0;
@@ -547,6 +562,7 @@ export function AdminContent({
                 setProductForm({
                   title: "",
                   category_id: initialCategories[0]?.id || 0,
+                  extra_categories: [],
                   image_url: "",
                   price: 0,
                   original_price: 0,
@@ -613,6 +629,42 @@ export function AdminContent({
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[12px] text-[rgba(238,238,238,0.6)]">
+                    Danh mục phụ <span className="text-[rgba(238,238,238,0.3)]">(chọn thêm)</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2 p-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg">
+                    {initialCategories
+                      .filter(c => c.id !== productForm.category_id)
+                      .map(c => {
+                        const checked = productForm.extra_categories.includes(c.id);
+                        return (
+                          <label key={c.id} className="flex items-center gap-1.5 cursor-pointer select-none">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {
+                                setProductForm({
+                                  ...productForm,
+                                  extra_categories: checked
+                                    ? productForm.extra_categories.filter(id => id !== c.id)
+                                    : [...productForm.extra_categories, c.id]
+                                });
+                              }}
+                              className="w-3.5 h-3.5 accent-[rgb(251,191,36)]"
+                            />
+                            <span className={`text-[12px] ${checked ? "text-[rgb(251,191,36)]" : "text-[rgba(238,238,238,0.7)]"}`}>
+                              {c.name}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    {initialCategories.filter(c => c.id !== productForm.category_id).length === 0 && (
+                      <span className="text-[12px] text-[rgba(238,238,238,0.3)]">Không có danh mục khác</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col gap-1 md:col-span-3 border-t border-[rgba(238,238,238,0.1)] pt-3 mt-1">
@@ -1130,8 +1182,13 @@ export function AdminContent({
                     <td className="py-3 text-white">
                       {p.price.toLocaleString("vi-VN")}đ
                     </td>
-                    <td className="py-3 text-white hidden md:table-cell">
-                      {p.category_name}
+                    <td className="py-3 hidden md:table-cell">
+                      <span className="text-white">{p.category_name}</span>
+                      {p.extra_categories.length > 0 && (
+                        <span className="ml-1.5 text-[11px] text-[rgba(238,238,238,0.4)]">
+                          +{p.extra_categories.length}
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 text-[rgb(220,38,38)] font-bold">
                       {p.fake_sold_count}
@@ -1167,6 +1224,7 @@ export function AdminContent({
                             const res = await updateProductAction(p.id, {
                               title: p.title,
                               category_id: p.category_id,
+                              extra_categories: p.extra_categories,
                               image_url: p.image_url,
                               price: p.price,
                               original_price: p.original_price,
@@ -1205,6 +1263,7 @@ export function AdminContent({
                               setProductForm({
                                 title: prod.title,
                                 category_id: prod.category_id,
+                                extra_categories: prod.extra_categories,
                                 image_url: prod.image_url,
                                 price: prod.price,
                                 original_price: prod.original_price,
@@ -3081,9 +3140,45 @@ export function AdminContent({
             </h3>
           </div>
           <p className="text-[rgba(238,238,238,0.5)] text-[13px] mb-4">
-            Bật/Tắt danh mục được phép quay random. Chi phí mỗi lượt quay: <strong className="text-[rgb(251,191,36)]">10.000đ</strong>.
-            Hệ thống sẽ chọn random 1 account <strong className="text-[rgb(34,197,94)]">còn hàng</strong> từ các danh mục được bật.
+            Bật/Tắt danh mục được phép quay random. Hệ thống sẽ chọn random 1 account <strong className="text-[rgb(34,197,94)]">còn hàng</strong> từ các danh mục được bật.
           </p>
+          <div className="flex items-center gap-3 mb-4 p-3 bg-[rgb(17,24,39)] rounded-lg border border-[rgb(75,85,99)]">
+            <span className="text-[rgba(238,238,238,0.7)] text-[13px] whitespace-nowrap">Chi phí mỗi lượt quay:</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={spinCostInput}
+                onChange={(e) => setSpinCostInput(e.target.value)}
+                min={1000}
+                max={1000000}
+                step={1000}
+                className="w-28 px-3 py-1.5 bg-[rgb(31,41,55)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+              />
+              <span className="text-[rgba(238,238,238,0.5)] text-[13px]">đ</span>
+            </div>
+            <button
+              disabled={savingSpinCost}
+              onClick={async () => {
+                const val = parseInt(spinCostInput, 10);
+                if (isNaN(val) || val < 1000) { alert("Chi phí tối thiểu 1.000đ"); return; }
+                if (val > 1000000) { alert("Chi phí tối đa 1.000.000đ"); return; }
+                setSavingSpinCost(true);
+                const res = await updateSpinCostAction(val);
+                setSavingSpinCost(false);
+                if (res.error) alert(res.error);
+                else {
+                  setSpinCost(res.cost!);
+                  setSpinCostInput(String(res.cost!));
+                }
+              }}
+              className="px-3 py-1.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black text-[12px] font-bold rounded-lg transition-colors disabled:opacity-50"
+            >
+              {savingSpinCost ? "Đang lưu..." : "Lưu"}
+            </button>
+            <span className="text-[rgba(238,238,238,0.4)] text-[11px]">
+              Đang áp dụng: <strong className="text-[rgb(251,191,36)]">{spinCost.toLocaleString("vi-VN")}đ</strong>
+            </span>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
               <thead>

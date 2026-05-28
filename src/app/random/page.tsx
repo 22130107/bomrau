@@ -38,6 +38,11 @@ export default async function RandomPage() {
     ORDER BY p.is_pinned DESC, p.id DESC
   `);
 
+  const [spinCostRows] = await pool.query<RowDataPacket[]>(
+    "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
+  );
+  const spinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 10000;
+
   const spinProducts: SpinProduct[] = spinProductRows
     .filter(row => Number(row.available_accounts) > 0)
     .map(row => ({
@@ -66,13 +71,14 @@ export default async function RandomPage() {
               Quay Random Nhận Acc
             </h2>
             <p className="text-[rgba(238,238,238,0.6)] text-[14px] md:text-[16px] mb-6 md:mb-8 self-start pl-4 md:pl-6">
-              Chi phí 10.000đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.
+              Chi phí {spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.
             </p>
             <RandomSpin
               isLoggedIn={!!session}
               userId={session?.userId ?? null}
               balance={balance}
               spinProducts={spinProducts}
+              spinCost={spinCost}
             />
 
             {spinProducts.length > 0 && (
