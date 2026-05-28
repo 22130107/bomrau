@@ -13,7 +13,7 @@ export function ContactButton() {
             href="https://zalo.me/0338180818"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-white rounded-full pr-5 pl-3 py-2 shadow-lg hover:scale-105 transition-transform group"
+            className="flex items-center gap-2 bg-white rounded-full pr-5 pl-3 py-2 shadow-lg hover:scale-105 active:scale-105 transition-transform group touch-manipulation"
           >
             <span className="w-11 h-11 flex items-center justify-center shrink-0" style={{backgroundColor:"#0068FF", borderRadius:"6px"}}>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-[22px] h-[22px]">
@@ -26,7 +26,7 @@ export function ContactButton() {
             href="https://www.facebook.com/bomrautft#"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-white rounded-full pr-5 pl-3 py-2 shadow-lg hover:scale-105 transition-transform"
+            className="flex items-center gap-2 bg-white rounded-full pr-5 pl-3 py-2 shadow-lg hover:scale-105 active:scale-105 transition-transform touch-manipulation"
           >
             <span className="w-11 h-11 bg-[rgb(24,119,242)] rounded-full flex items-center justify-center shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" className="w-6 h-6">
@@ -39,11 +39,12 @@ export function ContactButton() {
       )}
 
       <div className="relative">
-        <div className="absolute inset-0 w-20 h-20 rounded-full bg-[rgb(251,191,36)] animate-ping opacity-30" />
-        <div className="absolute -inset-3 w-[104px] h-[104px] rounded-full border-2 border-[rgb(251,191,36)] animate-ping opacity-20" style={{ animationDelay: '0.5s' }} />
+        <div className="absolute inset-0 w-20 h-20 rounded-full bg-[rgb(251,191,36)] animate-ping opacity-30 pointer-events-none" />
+        <div className="absolute -inset-3 w-[104px] h-[104px] rounded-full border-2 border-[rgb(251,191,36)] animate-ping opacity-20 pointer-events-none" style={{ animationDelay: '0.5s' }} />
         <button
           onClick={() => setOpen(!open)}
-          className="relative w-20 h-20 bg-[rgb(251,191,36)] rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform"
+          onTouchEnd={(e) => { e.preventDefault(); setOpen(!open); }}
+          className="relative w-20 h-20 bg-[rgb(251,191,36)] rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-110 transition-transform touch-manipulation"
         >
         {open ? (
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#1e1e2f" className="w-9 h-9">
