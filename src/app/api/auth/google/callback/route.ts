@@ -24,6 +24,21 @@ interface UserRow extends RowDataPacket {
 }
 
 /**
+ * Lấy origin thật — phải khớp với redirect route.
+ */
+function getOrigin(request: NextRequest): string {
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return request.nextUrl.origin;
+}
+
+/**
  * OAuth 2.0 callback — Google redirect về đây sau khi user đồng ý.
  * Đổi authorization code lấy token, verify, tạo session.
  */
@@ -57,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Xây dựng redirect URI (phải khớp với lúc redirect)
-    const origin = request.nextUrl.origin;
+    const origin = getOrigin(request);
     const redirectUri = `${origin}/api/auth/google/callback`;
 
     // Đổi authorization code lấy tokens

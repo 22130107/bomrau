@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 /**
+ * Lấy origin thật — khi chạy sau reverse proxy (Nginx),
+ * request.nextUrl.origin có thể trả về http://localhost:3000.
+ */
+function getOrigin(request: NextRequest): string {
+  // Ưu tiên env var nếu có
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
+  // Đọc từ headers proxy
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+  if (host) {
+    return `${proto}://${host}`;
+  }
+  return request.nextUrl.origin;
+}
+
+/**
  * OAuth 2.0 redirect flow — fallback cho iOS Safari khi GIS library bị chặn bởi ITP.
  * Redirect user tới Google Authorization Server.
  */
@@ -11,8 +29,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing GOOGLE_CLIENT_ID" }, { status: 500 });
   }
 
-  // Xây dựng callback URL từ request origin
-  const origin = request.nextUrl.origin;
+  // Xây dựng callback URL từ origin thật
+  const origin = getOrigin(request);
   const redirectUri = `${origin}/api/auth/google/callback`;
 
   // Tạo state token để chống CSRF
