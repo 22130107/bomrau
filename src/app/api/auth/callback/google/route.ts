@@ -44,6 +44,7 @@ function getOrigin(request: NextRequest): string {
  */
 export async function GET(request: NextRequest) {
   try {
+    const origin = getOrigin(request);
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
     const state = searchParams.get("state");
@@ -51,28 +52,26 @@ export async function GET(request: NextRequest) {
 
     // User từ chối hoặc lỗi
     if (error) {
-      return NextResponse.redirect(new URL("/login?error=google_denied", request.url));
+      return NextResponse.redirect(new URL("/login?error=google_denied", origin));
     }
 
     if (!code || !state) {
-      return NextResponse.redirect(new URL("/login?error=missing_params", request.url));
+      return NextResponse.redirect(new URL("/login?error=missing_params", origin));
     }
 
     // Verify state token chống CSRF
     const savedState = request.cookies.get("google_oauth_state")?.value;
     if (!savedState || savedState !== state) {
-      return NextResponse.redirect(new URL("/login?error=invalid_state", request.url));
+      return NextResponse.redirect(new URL("/login?error=invalid_state", origin));
     }
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     if (!clientId || !clientSecret) {
       console.error("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
-      return NextResponse.redirect(new URL("/login?error=server_config", request.url));
+      return NextResponse.redirect(new URL("/login?error=server_config", origin));
     }
 
-    // Xây dựng redirect URI (phải khớp với lúc redirect)
-    const origin = getOrigin(request);
     const redirectUri = `${origin}/api/auth/callback/google`;
 
     // Đổi authorization code lấy tokens
@@ -91,7 +90,7 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const errText = await tokenRes.text();
       console.error("Token exchange failed:", errText);
-      return NextResponse.redirect(new URL("/login?error=token_exchange", request.url));
+      return NextResponse.redirect(new URL("/login?error=token_exchange", origin));
     }
 
     const tokens: GoogleTokenResponse = await tokenRes.json();
@@ -103,13 +102,13 @@ export async function GET(request: NextRequest) {
 
     if (!userInfoRes.ok) {
       console.error("Failed to fetch user info:", await userInfoRes.text());
-      return NextResponse.redirect(new URL("/login?error=user_info", request.url));
+      return NextResponse.redirect(new URL("/login?error=user_info", origin));
     }
 
     const googleUser: GoogleUserInfo = await userInfoRes.json();
 
     if (!googleUser.sub) {
-      return NextResponse.redirect(new URL("/login?error=no_sub", request.url));
+      return NextResponse.redirect(new URL("/login?error=no_sub", origin));
     }
 
     const googleId = googleUser.sub;
@@ -158,11 +157,12 @@ export async function GET(request: NextRequest) {
     await createSession(user.id, user.username, user.role);
 
     // Xóa state cookie và redirect về trang chủ
-    const response = NextResponse.redirect(new URL("/", request.url));
+    const response = NextResponse.redirect(new URL("/", origin));
     response.cookies.delete("google_oauth_state");
     return response;
   } catch (err) {
     console.error("Google OAuth callback error:", err);
-    return NextResponse.redirect(new URL("/login?error=server_error", request.url));
+    const origin = getOrigin(request);
+    return NextResponse.redirect(new URL("/login?error=server_error", origin));
   }
 }
