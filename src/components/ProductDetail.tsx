@@ -222,7 +222,7 @@ export function ProductDetail({
         <div className="fixed inset-0 z-[9999] flex justify-end bg-black/60" onClick={() => setShowModal(false)}>
           <div className="bg-[#0f172a] border-l border-[rgba(255,255,255,0.1)] w-full max-w-[360px] h-full p-6 overflow-y-auto no-scrollbar animate-fade-in flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="bg-white rounded-xl p-2 mb-6 flex items-center justify-center">
-              <img src="/zaloqr.png" alt="Zalo QR" className="w-full aspect-square object-contain" onError={(e) => e.currentTarget.src = 'https://via.placeholder.com/300?text=Zalo+QR'} />
+              <img src="/zaloqr.png" alt="Zalo QR" className="w-full aspect-square object-contain" onError={(e) => e.currentTarget.src = 'https://via.placeholder.com/300?text=Zalo+QR'} suppressHydrationWarning />
             </div>
             <a href="https://zalo.me/0338180818" target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 py-3 mb-6 bg-transparent border border-[rgb(75,85,99)] rounded-lg text-white text-[15px] hover:bg-[rgba(255,255,255,0.05)] transition-colors">
               Zalo: 0338180818

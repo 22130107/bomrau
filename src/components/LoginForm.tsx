@@ -19,6 +19,7 @@ export function LoginForm() {
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [showGoogleButton, setShowGoogleButton] = useState(false);
   const [isWebView, setIsWebView] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const googleContainerRef = useRef<HTMLDivElement>(null);
   const fullPickerOpenedRef = useRef(false);
   const scriptRetryRef = useRef(0);
@@ -38,6 +39,13 @@ export function LoginForm() {
       setIsWebView(true);
       return;
     }
+  }, []);
+
+  // Phát hiện mobile device (tránh hydration mismatch)
+  useEffect(() => {
+    const mobile = /iPhone|iPod|Android/i.test(navigator.userAgent) ||
+      (/Mac OS/i.test(navigator.userAgent) && navigator.maxTouchPoints > 2);
+    setIsMobile(mobile);
   }, []);
 
   // Xử lý redirect callback từ Google Sign-In (mobile)
@@ -126,11 +134,6 @@ export function LoginForm() {
       size: "large",
     });
   }, [showGoogleButton]);
-
-  const isMobile = typeof navigator !== "undefined" && (
-    /iPhone|iPod|Android/i.test(navigator.userAgent) ||
-    (/Mac OS/i.test(navigator.userAgent) && navigator.maxTouchPoints > 2)
-  );
 
   function promptGoogleLogin() {
     const google = window.google;
