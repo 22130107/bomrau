@@ -17,6 +17,7 @@ export function LoginForm() {
 
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [isWebView, setIsWebView] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   const error = googleError || (isLogin ? loginState?.error : registerState?.error);
   const isPending = isLogin ? loginPending : registerPending;
@@ -25,6 +26,7 @@ export function LoginForm() {
   useEffect(() => {
     if (typeof navigator === "undefined") return;
     const ua = navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(ua));
     if (/FBAN|FBAV|FBBV|FBDV|FBMD|FBPN|FBLC|FBOP/i.test(ua) ||
         /Zalo|zalo/i.test(ua) ||
         /Instagram/i.test(ua) ||
@@ -242,7 +244,7 @@ export function LoginForm() {
               Đăng nhập Google không khả dụng trên trình duyệt trong ứng dụng.
             </p>
             <p className="text-[rgba(238,238,238,0.6)] text-[12px] mt-1">
-              Vui lòng mở trang này bằng <span className="text-white font-semibold">Safari</span> và thử lại.
+              Vui lòng mở trang này bằng <span className="text-white font-semibold">{isIOS ? "Safari" : "Chrome"}</span> và thử lại.
             </p>
           </div>
         ) : (
