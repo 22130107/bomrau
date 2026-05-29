@@ -127,6 +127,8 @@ export async function GET(request: NextRequest) {
       user = existing[0];
     } else {
       let baseUsername = name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .replace(/[^a-z0-9_]/g, "_")
         .replace(/_+/g, "_")
