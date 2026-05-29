@@ -17,6 +17,7 @@ interface PurchasedAccount {
 interface UserData {
   id: number;
   username: string;
+  displayName: string;
   email: string;
   balance: number;
   role: "admin" | "npp" | "user";
@@ -95,12 +96,12 @@ export function ProfileContent({ user }: ProfileContentProps) {
             {user.avatarUrl ? (
               <img
                 src={user.avatarUrl}
-                alt={user.username}
+                alt={user.displayName}
                 className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] rounded-full object-cover border-2 border-[rgb(251,191,36)] shadow-[0_0_20px_rgba(251,191,36,0.4)]"
               />
             ) : (
               <div className="w-[80px] h-[80px] md:w-[100px] md:h-[100px] rounded-full bg-gradient-to-br from-[rgb(202,138,4)] to-[rgb(251,191,36)] flex items-center justify-center text-[32px] md:text-[40px] font-bold text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]">
-                {user.username.charAt(0).toUpperCase()}
+                {user.displayName.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
@@ -108,7 +109,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
           {/* Info */}
           <div className="flex-1 text-center md:text-left">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-2 mb-1">
-              <h2 className="text-[rgb(251,191,36)] text-[22px] md:text-[26px] font-bold">{user.username}</h2>
+              <h2 className="text-[rgb(251,191,36)] text-[22px] md:text-[26px] font-bold">{user.displayName}</h2>
               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${roleStyle.color}`}>
                 {roleStyle.label}
               </span>
@@ -166,6 +167,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
             <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold mb-2">Thông tin tài khoản</h3>
 
             {[
+              { label: "Tên hiển thị", value: user.displayName },
               { label: "Tên đăng nhập", value: user.username },
               { label: "Email", value: user.email },
               {

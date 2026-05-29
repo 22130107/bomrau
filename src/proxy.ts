@@ -35,6 +35,7 @@ export async function proxy(request: NextRequest) {
       const newSession = await encrypt({
         userId: session.userId,
         username: session.username,
+        displayName: session.displayName,
         role: session.role,
         expiresAt: newExpiresAt,
       });

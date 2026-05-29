@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 export interface SessionPayload {
   userId: number;
   username: string;
+  displayName: string;
   role: "admin" | "npp" | "user";
   expiresAt: Date;
 }
@@ -37,10 +38,11 @@ export async function decrypt(session: string | undefined = "") {
 export async function createSession(
   userId: number,
   username: string,
-  role: "admin" | "npp" | "user"
+  role: "admin" | "npp" | "user",
+  displayName?: string
 ) {
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  const session = await encrypt({ userId, username, role, expiresAt });
+  const session = await encrypt({ userId, username, displayName: displayName || username, role, expiresAt });
   const cookieStore = await cookies();
 
   cookieStore.set("session", session, {
@@ -81,6 +83,7 @@ export async function updateSession() {
   const newPayload: SessionPayload = {
     userId: payload.userId,
     username: payload.username,
+    displayName: payload.displayName,
     role: payload.role,
     expiresAt: newExpiresAt,
   };

@@ -11,6 +11,7 @@ import { RowDataPacket } from "mysql2";
 interface User extends RowDataPacket {
   id: number;
   username: string;
+  display_name: string | null;
   email: string | null;
   password_hash: string | null;
   google_id: string | null;
@@ -58,7 +59,7 @@ export async function loginAction(
 
   try {
     const [rows] = await pool.query<User[]>(
-      "SELECT id, username, email, password_hash, google_id, role, is_active FROM users WHERE username = ? LIMIT 1",
+      "SELECT id, username, display_name, email, password_hash, google_id, role, is_active FROM users WHERE username = ? LIMIT 1",
       [username]
     );
 
@@ -85,7 +86,7 @@ export async function loginAction(
 
     // Đăng nhập thành công → reset rate limit
     resetRateLimit(rateLimitKey);
-    await createSession(user.id, user.username, user.role);
+    await createSession(user.id, user.username, user.role, user.display_name || user.username);
   } catch (err) {
     console.error("Login error:", err);
     return { error: "Lỗi kết nối server. Vui lòng thử lại sau." };

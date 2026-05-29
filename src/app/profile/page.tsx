@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 interface UserRow extends RowDataPacket {
   id: number;
   username: string;
+  display_name: string;
   email: string | null;
   balance: number;
   role: "admin" | "npp" | "user";
@@ -43,7 +44,7 @@ export default async function ProfilePage() {
 
   // ── 1. Thông tin user đầy đủ ──────────────────────────────────────────────
   const [userRows] = await pool.query<UserRow[]>(
-    `SELECT id, username, email, balance, role, avatar_url, created_at
+    `SELECT id, username, COALESCE(display_name, username) AS display_name, email, balance, role, avatar_url, created_at
      FROM users WHERE id = ? LIMIT 1`,
     [session.userId]
   );
@@ -82,6 +83,7 @@ export default async function ProfilePage() {
           user={{
             id: user.id,
             username: user.username,
+            displayName: user.display_name,
             email: user.email || "Chưa cập nhật",
             balance: Number(user.balance),
             role: user.role,

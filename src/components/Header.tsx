@@ -5,7 +5,9 @@ import { HeaderClient } from "./HeaderClient";
 export async function Header() {
   const session = await getSession();
   const isLoggedIn = !!session;
-  const username = session?.username;
+  const displayName = session?.displayName || session?.username;
+  // Keep username for backward compat
+  const username = displayName;
   const role = session?.role;
 
   // Username luôn dẫn về profile — dashboard có link riêng trong nav

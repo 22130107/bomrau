@@ -16,6 +16,7 @@ interface GoogleTokenPayload {
 interface UserRow extends RowDataPacket {
   id: number;
   username: string;
+  display_name: string | null;
   role: "admin" | "npp" | "user";
 }
 
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     const name = payload.name || email.split("@")[0] || "user";
 
     const [existing] = await pool.query<UserRow[]>(
-      "SELECT id, username, role FROM users WHERE google_id = ? LIMIT 1",
+      "SELECT id, username, display_name, role FROM users WHERE google_id = ? LIMIT 1",
       [googleId]
     );
 
@@ -103,24 +104,9 @@ export async function POST(request: NextRequest) {
 
     if (existing.length > 0) {
       user = existing[0];
-      // Cập nhật username nếu tên Google thay đổi
-      const cleanName = name
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/[^a-z0-9_]/g, "_")
-        .replace(/_+/g, "_")
-        .replace(/^_|_$/g, "")
-        .slice(0, 20);
-      if (cleanName && cleanName !== user.username) {
-        const [sameName] = await pool.query<RowDataPacket[]>(
-          "SELECT id FROM users WHERE username = ? AND id != ? LIMIT 1",
-          [cleanName, user.id]
-        );
-        if (sameName.length === 0) {
-          await pool.query("UPDATE users SET username = ? WHERE id = ?", [cleanName, user.id]);
-          user.username = cleanName;
-        }
+      // Cập nhật display_name nếu tên Google thay đổi
+      if (name && name !== user.username) {
+        await pool.query("UPDATE users SET display_name = ? WHERE id = ?", [name, user.id]);
       }
     } else {
       let baseUsername = name
@@ -146,14 +132,14 @@ export async function POST(request: NextRequest) {
       }
 
       const [result] = await pool.query<ResultSetHeader>(
-        "INSERT INTO users (username, email, password_hash, google_id, role, is_active) VALUES (?, ?, '', ?, 'user', 1)",
-        [baseUsername, email || null, googleId]
+        "INSERT INTO users (username, display_name, email, password_hash, google_id, role, is_active) VALUES (?, ?, ?, '', ?, 'user', 1)",
+        [baseUsername, name || null, email || null, googleId]
       );
 
-      user = { id: result.insertId, username: baseUsername, role: "user" } as UserRow;
+      user = { id: result.insertId, username: baseUsername, display_name: name || null, role: "user" } as UserRow;
     }
 
-    await createSession(user.id, user.username, user.role);
+    await createSession(user.id, user.username, user.role, user.display_name || user.username);
 
     return NextResponse.json({ success: true });
   } catch (err) {
