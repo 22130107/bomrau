@@ -18,11 +18,27 @@ export function LoginForm() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const [showGoogleButton, setShowGoogleButton] = useState(false);
+  const [isWebView, setIsWebView] = useState(false);
   const googleContainerRef = useRef<HTMLDivElement>(null);
   const fullPickerOpenedRef = useRef(false);
+  const scriptRetryRef = useRef(0);
 
   const error = googleError || (isLogin ? loginState?.error : registerState?.error);
   const isPending = isLogin ? loginPending : registerPending;
+
+  // Phát hiện in-app browser (WebView) ngay khi mount
+  useEffect(() => {
+    if (typeof navigator === "undefined") return;
+    const ua = navigator.userAgent;
+    if (/FBAN|FBAV|FBBV|FBDV|FBMD|FBPN|FBLC|FBOP/i.test(ua) ||
+        /Zalo|zalo/i.test(ua) ||
+        /Instagram/i.test(ua) ||
+        /Line\//i.test(ua) ||
+        /; wv\)/i.test(ua)) {
+      setIsWebView(true);
+      return;
+    }
+  }, []);
 
   // Xử lý redirect callback từ Google Sign-In (mobile)
   useEffect(() => {
@@ -59,20 +75,46 @@ export function LoginForm() {
     setGoogleError(null);
     setShowGoogleButton(false);
 
+    if (isWebView) return;
+
     if (!window.google) {
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = promptGoogleLogin;
-      script.onerror = () => {
-        setGoogleError("Không thể tải Google Sign-In. Vui lòng thử lại sau.");
-        setGoogleLoading(false);
-      };
-      document.body.appendChild(script);
+      await loadGsiScript();
     } else {
       promptGoogleLogin();
     }
+  }
+
+  function loadGsiScript(): Promise<void> {
+    return new Promise((resolve) => {
+      scriptRetryRef.current = 0;
+
+      function attemptLoad() {
+        scriptRetryRef.current++;
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+
+        script.onload = () => {
+          promptGoogleLogin();
+          resolve();
+        };
+
+        script.onerror = () => {
+          if (scriptRetryRef.current < 2) {
+            setTimeout(attemptLoad, 2000);
+          } else {
+            setGoogleError("Không thể tải Google Sign-In. Vui lòng thử lại sau.");
+            setGoogleLoading(false);
+            resolve();
+          }
+        };
+
+        document.body.appendChild(script);
+      }
+
+      attemptLoad();
+    });
   }
 
   useEffect(() => {
@@ -85,7 +127,10 @@ export function LoginForm() {
     });
   }, [showGoogleButton]);
 
-  const isMobile = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  const isMobile = typeof navigator !== "undefined" && (
+    /iPhone|iPod|Android/i.test(navigator.userAgent) ||
+    (/Mac OS/i.test(navigator.userAgent) && navigator.maxTouchPoints > 2)
+  );
 
   function promptGoogleLogin() {
     const google = window.google;
@@ -95,10 +140,21 @@ export function LoginForm() {
       return;
     }
 
+    if (!google.accounts?.id) {
+      setGoogleError("Google Sign-In không khả dụng trên trình duyệt này. Vui lòng dùng Safari.");
+      setGoogleLoading(false);
+      return;
+    }
+
     google.accounts.id.initialize({
       client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
       callback: handleGoogleCredential,
       cancel_on_tap_outside: false,
+      error_callback: (err: { type: string; message?: string }) => {
+        setGoogleError(err?.message || "Google Sign-In gặp lỗi. Vui lòng thử lại.");
+        setGoogleLoading(false);
+        setShowGoogleButton(false);
+      },
     });
 
     if (isMobile) {
@@ -331,21 +387,32 @@ export function LoginForm() {
         </div>
 
         {/* Google Login */}
-        <button
-          id="btn-google-login"
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={googleLoading}
-          className="w-full py-3 border border-[rgb(75,85,99)] hover:border-[rgb(251,191,36)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
-        >
-          <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-          </svg>
-          {googleLoading ? "Đang xác thực..." : "Đăng nhập bằng Google"}
-        </button>
+        {isWebView ? (
+          <div className="w-full px-4 py-3 bg-[rgba(251,191,36,0.1)] border border-[rgb(251,191,36)] rounded-lg text-center">
+            <p className="text-[rgb(251,191,36)] text-[13px] font-semibold">
+              Đăng nhập Google không khả dụng trên trình duyệt trong ứng dụng.
+            </p>
+            <p className="text-[rgba(238,238,238,0.6)] text-[12px] mt-1">
+              Vui lòng mở trang này bằng <span className="text-white font-semibold">Safari</span> và thử lại.
+            </p>
+          </div>
+        ) : (
+          <button
+            id="btn-google-login"
+            type="button"
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+            className="w-full py-3 border border-[rgb(75,85,99)] hover:border-[rgb(251,191,36)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+            </svg>
+            {googleLoading ? "Đang xác thực..." : "Đăng nhập bằng Google"}
+          </button>
+        )}
 
         {/* Google rendered button (fallback khi One Tap không hiển thị) */}
         {showGoogleButton && (

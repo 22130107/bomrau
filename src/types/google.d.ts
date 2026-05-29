@@ -17,6 +17,7 @@ interface Window {
           client_id: string;
           callback: (response: { credential: string }) => void;
           cancel_on_tap_outside?: boolean;
+          error_callback?: (error: { type: string; message?: string }) => void;
         }) => void;
         prompt: (momentListener?: (moment: PromptMomentNotification) => void) => void;
         renderButton: (
