@@ -39,8 +39,8 @@ export default function RootLayout({
     <html lang="vi" className={`${openSans.variable} ${nunito.variable}`}>
       <body className="min-h-screen bg-[rgb(15,23,42)] text-[rgb(238,238,238)] font-[family-name:var(--font-open-sans)]">
         {children}
-        {/* <ContactButton /> */}
-        {/* <ClientErrorDiagnostic /> */}
+        <ContactButton />
+        <ClientErrorDiagnostic />
       </body>
     </html>
   );
