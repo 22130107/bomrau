@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // Xây dựng redirect URI (phải khớp với lúc redirect)
     const origin = getOrigin(request);
-    const redirectUri = `${origin}/api/auth/google/callback`;
+    const redirectUri = `${origin}/api/auth/callback/google`;
 
     // Đổi authorization code lấy tokens
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {

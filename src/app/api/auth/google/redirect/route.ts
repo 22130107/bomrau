@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   // Xây dựng callback URL từ origin thật
   const origin = getOrigin(request);
-  const redirectUri = `${origin}/api/auth/google/callback`;
+  const redirectUri = `${origin}/api/auth/callback/google`;
 
   // Tạo state token để chống CSRF
   const state = crypto.randomBytes(32).toString("hex");
