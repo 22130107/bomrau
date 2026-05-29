@@ -41,11 +41,13 @@
 
 .animate-blink-badge {
   animation: blink-scale-color 1s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-blink-badge::before,
 .animate-blink-badge::after {
   animation: blink-scale-color 1s ease-in-out infinite;
+  will-change: transform;
 }
 
 .animate-fade-in-up {
@@ -93,11 +95,12 @@ body {
 }
 
 @utility no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-  &::-webkit-scrollbar {
-    display: none; /* Chrome, Safari and Opera */
-  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 
