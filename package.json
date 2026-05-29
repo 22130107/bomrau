@@ -30,7 +30,7 @@
     "defaults",
     "not dead",
     "ios >= 9",
-    "safari >= 12",
+    "safari >= 9",
     "chrome >= 60",
     "firefox >= 60"
   ]
