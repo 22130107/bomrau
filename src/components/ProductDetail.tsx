@@ -127,9 +127,9 @@ export function ProductDetail({
       <div className="w-full max-w-[1200px] mx-auto px-[14px] animate-fade-in-up">
         <div className="md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px] md:h-full">
           <article className="items-start flex flex-col md:flex-row size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal gap-[16px] md:gap-[24px] pt-4 md:pt-16 pr-4 pb-6 pl-4 border border-[rgb(253,230,138)] md:border-none">
-            <div className="font-medium text-[rgb(251,191,36)] text-[20px] md:text-[24px] font-[family-name:var(--font-nunito)] w-full md:absolute md:left-4 md:top-4 md:w-auto z-10 mb-2 md:mb-0">
+            <h1 className="font-medium text-[rgb(251,191,36)] text-[20px] md:text-[24px] font-[family-name:var(--font-nunito)] w-full md:absolute md:left-4 md:top-4 md:w-auto z-10 mb-2 md:mb-0">
               {name}
-            </div>
+            </h1>
             <figure className="relative w-full md:w-[50%] mt-2 md:mt-[12px]">
               <div className="items-center flex font-bold justify-center absolute w-[50px] md:w-[60px] h-[50px] md:h-[60px] top-0 right-0 text-white text-[18px] md:text-[22px] p-1 z-[2] animate-blink-badge font-[family-name:var(--font-nunito)]">
                 <span className="block text-[rgb(254,239,199)]">-{discount}</span>

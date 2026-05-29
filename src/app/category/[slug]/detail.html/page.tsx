@@ -8,10 +8,27 @@ import { RowDataPacket } from "mysql2";
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 
-export const metadata: Metadata = {
-  title: "Chi Tiết Sản Phẩm - Shop BomRauTFT",
-  description: "Chi tiết sản phẩm TFT giá rẻ, uy tín.",
-};
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams: Promise<{ id?: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { id } = await searchParams;
+  if (!id) return {};
+  const [categories] = await pool.query<RowDataPacket[]>("SELECT id, name FROM categories WHERE slug = ?", [slug]);
+  const [products] = await pool.query<RowDataPacket[]>("SELECT id, title, image_url FROM products WHERE id = ? AND status = 'available'", [id]);
+  if (products.length === 0 || categories.length === 0) return {};
+  const product = products[0];
+  const category = categories[0];
+  const image = product.image_url || "";
+  return {
+    title: `${product.title} - BomRauTFT | Mua Nick TFT Giá Rẻ`,
+    description: `Mua tài khoản game TFT ${product.title} giá rẻ, uy tín. Danh mục ${category.name}. Giao dịch nhanh chóng, an toàn.`,
+    openGraph: {
+      title: `${product.title} - BomRauTFT`,
+      description: `Mua tài khoản game TFT ${product.title} giá rẻ.`,
+      images: image ? [{ url: image }] : [],
+    },
+    alternates: { canonical: `/category/${slug}/detail.html?id=${id}` },
+  };
+}
 
 export default async function ProductDetailPage({ 
   params, 
@@ -72,8 +89,25 @@ export default async function ProductDetailPage({
     }
   }
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    image: product.image_url || category.image_url || "",
+    description: `Mua tài khoản game TFT ${product.title} giá rẻ, uy tín tại BomRauTFT.`,
+    offers: {
+      "@type": "Offer",
+      price: Number(product.price),
+      priceCurrency: "VND",
+      availability: realRemainingCount > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      url: `https://bomrautft.com/category/${slug}/detail.html?id=${productId}`,
+    },
+    category: category.name,
+  };
+
   return (
     <div className="pt-[70px] md:pt-[90px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <Header />
       <main>
         <Breadcrumb items={[

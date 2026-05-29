@@ -1,3 +1,0 @@
-ALTER TABLE orders MODIFY COLUMN product_id INT UNSIGNED NULL;
-ALTER TABLE orders DROP FOREIGN KEY fk_orders_product;
-ALTER TABLE orders ADD CONSTRAINT fk_orders_product FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE SET NULL ON UPDATE CASCADE;

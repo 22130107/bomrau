@@ -9,7 +9,8 @@ import { RowDataPacket } from "mysql2";
 
 
 export const metadata: Metadata = {
-  title: "Admin - BomRauTFT",
+  title: "Quản Trị - BomRauTFT",
+  description: "Trang quản trị hệ thống BomRauTFT. Quản lý sản phẩm, danh mục, tài khoản, đơn hàng và người dùng.",
   robots: "noindex, nofollow",
 };
 

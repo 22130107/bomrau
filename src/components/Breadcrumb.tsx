@@ -11,8 +11,20 @@ interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ items }: BreadcrumbProps) {
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.label,
+      item: item.href ? `https://bomrautft.com${item.href}` : undefined,
+    })),
+  };
+
   return (
     <div className="pt-4 pb-2 md:pb-3">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
       <div className="mx-auto w-full max-w-[1200px] px-[14px]">
         <ul className="flex flex-wrap items-center gap-y-1">
           {items.map((item, index) => (

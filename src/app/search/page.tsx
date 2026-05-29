@@ -57,9 +57,9 @@ export default async function SearchPage({
         ]} />
         <div className="pt-6 md:pt-10 pb-6 md:pb-10">
           <div className="mx-auto w-full max-w-[1200px] px-[14px]">
-            <h2 className="font-bold mb-[16px] md:mb-[32px] border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px]">
+            <h1 className="font-bold mb-[16px] md:mb-[32px] border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px]">
               {q ? `Kết quả tìm kiếm: "${q}"` : "Tìm kiếm sản phẩm"}
-            </h2>
+            </h1>
             {!q ? (
               <p className="text-[rgba(238,238,238,0.6)] text-[16px] italic">Vui lòng nhập từ khóa để tìm kiếm.</p>
             ) : products.length === 0 ? (

@@ -3198,7 +3198,7 @@ export function AdminContent({
                         <div className="w-12 h-8 border border-[rgb(75,85,99)] rounded overflow-hidden bg-[rgb(17,24,39)]">
                           <img
                             src={n.image_url}
-                            alt=""
+                            alt={n.title || "Hình ảnh thông báo"}
                             className="w-full h-full object-cover"
                           />
                         </div>

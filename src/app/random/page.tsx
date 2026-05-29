@@ -67,9 +67,9 @@ export default async function RandomPage() {
         ]} />
         <section className="py-6 md:py-10 animate-fade-in-up">
           <div className="mx-auto w-full max-w-[1200px] px-[14px] flex flex-col items-center">
-            <h2 className="font-bold mb-2 border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px] self-start">
+            <h1 className="font-bold mb-2 border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px] self-start">
               Quay Random Nhận Acc
-            </h2>
+            </h1>
             <p className="text-[rgba(238,238,238,0.6)] text-[14px] md:text-[16px] mb-6 md:mb-8 self-start pl-4 md:pl-6">
               Chi phí {spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.
             </p>

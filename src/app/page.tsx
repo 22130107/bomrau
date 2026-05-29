@@ -25,8 +25,32 @@ export default async function HomePage() {
     image: row.image_url || "",
   }));
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        name: "BomRauTFT",
+        url: "https://bomrautft.com",
+        description: "Shop mua bán nick game TFT uy tín, giá rẻ.",
+        potentialAction: {
+          "@type": "SearchAction",
+          target: { "@type": "EntryPoint", urlTemplate: "https://bomrautft.com/search?q={search_term_string}" },
+          "query-input": "required name=search_term_string",
+        },
+      },
+      {
+        "@type": "Organization",
+        name: "BomRauTFT",
+        url: "https://bomrautft.com",
+        logo: "https://bomrautft.com/icon.png",
+      },
+    ],
+  };
+
   return (
     <div className="pt-[70px] md:pt-[90px]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Header />
       <main>
         <NewsSection notifications={initialNotifications} />

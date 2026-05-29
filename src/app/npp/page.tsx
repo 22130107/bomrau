@@ -7,6 +7,7 @@ import { getSession } from "@/lib/session";
 
 export const metadata: Metadata = {
   title: "Nhà Phân Phối - BomRauTFT",
+  description: "Trang quản lý doanh thu dành cho nhà phân phối của BomRauTFT.",
   robots: "noindex, nofollow",
 };
 

@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Open_Sans, Nunito } from "next/font/google";
 import "./globals.css";
 import { ContactButton } from "@/components/ContactButton";
-import { ClientErrorDiagnostic } from "@/components/ClientErrorDiagnostic";
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
@@ -14,9 +13,15 @@ const nunito = Nunito({
   subsets: ["latin", "vietnamese"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "BomRauTFT - Shop Mua Bán Nick Game TFT Uy Tín, Giá Rẻ",
-  description: "BomRauTFT là Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC. Mua bán tài khoản game TFT chất lượng cao.",
+  metadataBase: new URL("https://bomrautft.com"),
+  title: { default: "BomRauTFT - Shop Mua Bán Nick Game TFT Uy Tín, Giá Rẻ", template: "%s - BomRauTFT" },
+  description: "BomRauTFT là Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC. Mua bán tài khoản game TFT chất lượng cao với giá tốt nhất.",
   keywords: "mua nick tft, shop tft, bomrautft, nick game tft, tài khoản tft giá rẻ",
   icons: {
     icon: "/icon.png",
@@ -27,6 +32,14 @@ export const metadata: Metadata = {
     description: "Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC.",
     type: "website",
     url: "https://bomrautft.com",
+    siteName: "BomRauTFT",
+    images: [{ url: "/icon.png", width: 512, height: 512 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BomRauTFT - Shop Mua Bán Nick Game TFT",
+    description: "Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC.",
+    images: ["/icon.png"],
   },
 };
 
@@ -40,7 +53,6 @@ export default function RootLayout({
       <body className="min-h-screen bg-[rgb(15,23,42)] text-[rgb(238,238,238)] font-[family-name:var(--font-open-sans)]">
         {children}
         <ContactButton />
-        <ClientErrorDiagnostic />
       </body>
     </html>
   );

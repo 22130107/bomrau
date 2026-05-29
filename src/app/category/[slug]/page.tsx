@@ -8,12 +8,23 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import { notFound } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Mua Nick TFT - Shop BomRauTFT | Giá Rẻ, Uy Tín",
-  description: "Danh sách tài khoản game TFT giá rẻ, uy tín. Acc VIP, Siêu Rẻ, Pet Tím, Thần Thoại. Giao dịch nhanh chóng, an toàn.",
-};
-
 const ITEMS_PER_PAGE = 12;
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const [categories] = await pool.query<RowDataPacket[]>("SELECT id, name FROM categories WHERE slug = ?", [slug]);
+  if (categories.length === 0) return {};
+  const category = categories[0];
+  return {
+    title: `${category.name} - BomRauTFT | Mua Nick TFT Giá Rẻ, Uy Tín`,
+    description: `Mua tài khoản game TFT danh mục ${category.name} giá rẻ, uy tín. Acc VIP, Pet Tím, Thần Thoại. Giao dịch nhanh chóng, an toàn.`,
+    openGraph: {
+      title: `${category.name} - BomRauTFT`,
+      description: `Mua tài khoản game TFT danh mục ${category.name} giá rẻ, uy tín.`,
+    },
+    alternates: { canonical: `/category/${slug}` },
+  };
+}
 
 export default async function CategoryPage({
   params,
@@ -64,9 +75,9 @@ export default async function CategoryPage({
         ]} />
         <div className="pt-6 md:pt-10 pb-6 md:pb-10">
           <div className="mx-auto w-full max-w-[1200px] px-[14px]">
-            <h2 className="font-bold mb-[16px] md:mb-[32px] border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px]">
+            <h1 className="font-bold mb-[16px] md:mb-[32px] border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px]">
               {category.name}
-            </h2>
+            </h1>
             {products.length === 0 ? (
               <p className="text-[rgba(238,238,238,0.6)] text-[16px] italic">Hiện chưa có sản phẩm nào trong danh mục này.</p>
             ) : (
