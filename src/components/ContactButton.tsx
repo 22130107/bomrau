@@ -43,7 +43,6 @@ export function ContactButton() {
         <div className="absolute -inset-3 w-[104px] h-[104px] rounded-full border-2 border-[rgb(251,191,36)] animate-ping opacity-20 pointer-events-none" style={{ animationDelay: '0.5s' }} />
         <button
           onClick={() => setOpen(!open)}
-          onTouchEnd={(e) => { e.preventDefault(); setOpen(!open); }}
           className="relative w-20 h-20 bg-[rgb(251,191,36)] rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-110 transition-transform touch-manipulation"
         >
         {open ? (
