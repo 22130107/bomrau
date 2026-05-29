@@ -125,6 +125,25 @@ export async function GET(request: NextRequest) {
 
     if (existing.length > 0) {
       user = existing[0];
+      // Cập nhật username nếu tên Google thay đổi
+      const cleanName = name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "_")
+        .replace(/_+/g, "_")
+        .replace(/^_|_$/g, "")
+        .slice(0, 20);
+      if (cleanName && cleanName !== user.username) {
+        const [sameName] = await pool.query<RowDataPacket[]>(
+          "SELECT id FROM users WHERE username = ? AND id != ? LIMIT 1",
+          [cleanName, user.id]
+        );
+        if (sameName.length === 0) {
+          await pool.query("UPDATE users SET username = ? WHERE id = ?", [cleanName, user.id]);
+          user.username = cleanName;
+        }
+      }
     } else {
       let baseUsername = name
         .normalize("NFD")
