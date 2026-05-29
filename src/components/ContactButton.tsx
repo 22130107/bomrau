@@ -6,9 +6,9 @@ export function ContactButton() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-20 right-10 z-[9999] flex flex-col items-end gap-3">
+    <div className="fixed bottom-20 right-10 z-[9999] flex flex-col items-end gap-3 pointer-events-none">
       {open && (
-        <div className="flex flex-col items-end gap-3 animate-fade-in">
+        <div className="flex flex-col items-end gap-3 animate-fade-in pointer-events-auto">
           <a
             href="https://zalo.me/0338180818"
             target="_blank"
@@ -38,7 +38,7 @@ export function ContactButton() {
         </div>
       )}
 
-      <div className="relative">
+      <div className="relative pointer-events-auto">
         <div className="absolute inset-0 w-20 h-20 rounded-full bg-[rgb(251,191,36)] animate-ping opacity-30 pointer-events-none" />
         <div className="absolute -inset-3 w-[104px] h-[104px] rounded-full border-2 border-[rgb(251,191,36)] animate-ping opacity-20 pointer-events-none" style={{ animationDelay: '0.5s' }} />
         <button
