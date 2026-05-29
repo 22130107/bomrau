@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useActionState } from "react";
+import { useState, useEffect, useActionState } from "react";
 import { loginAction, registerAction, AuthState } from "@/app/actions/auth";
 
 export function LoginForm() {
@@ -15,14 +15,8 @@ export function LoginForm() {
     null
   );
 
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
-  const [showGoogleButton, setShowGoogleButton] = useState(false);
   const [isWebView, setIsWebView] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const googleContainerRef = useRef<HTMLDivElement>(null);
-  const fullPickerOpenedRef = useRef(false);
-  const scriptRetryRef = useRef(0);
 
   const error = googleError || (isLogin ? loginState?.error : registerState?.error);
   const isPending = isLogin ? loginPending : registerPending;
@@ -41,178 +35,30 @@ export function LoginForm() {
     }
   }, []);
 
-  // Phát hiện mobile device (tránh hydration mismatch)
+  // Xử lý error từ OAuth callback redirect
   useEffect(() => {
-    const mobile = /iPhone|iPod|Android/i.test(navigator.userAgent) ||
-      (/Mac OS/i.test(navigator.userAgent) && navigator.maxTouchPoints > 2);
-    setIsMobile(mobile);
+    const params = new URLSearchParams(window.location.search);
+    const oauthError = params.get("error");
+    if (oauthError) {
+      const errorMessages: Record<string, string> = {
+        google_denied: "Bạn đã từ chối đăng nhập Google.",
+        missing_params: "Thiếu thông tin từ Google. Vui lòng thử lại.",
+        invalid_state: "Phiên đăng nhập không hợp lệ. Vui lòng thử lại.",
+        token_exchange: "Xác thực Google thất bại. Vui lòng thử lại.",
+        user_info: "Không lấy được thông tin tài khoản Google.",
+        server_config: "Lỗi cấu hình server. Liên hệ admin.",
+        server_error: "Lỗi server. Vui lòng thử lại sau.",
+      };
+      setGoogleError(errorMessages[oauthError] || "Đăng nhập Google thất bại.");
+      // Xóa error param khỏi URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
   }, []);
 
-  // Xử lý redirect callback từ Google Sign-In (mobile)
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) return;
-    const params = new URLSearchParams(hash.replace("#", ""));
-    const credential = params.get("id_token") || params.get("credential");
-    if (!credential) return;
-    window.history.replaceState({}, "", window.location.pathname);
-    setGoogleLoading(true);
-    (async () => {
-      try {
-        const res = await fetch("/api/auth/google", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ credential }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          window.location.href = "/";
-        } else {
-          setGoogleError(data.error || "Đăng nhập Google thất bại.");
-          setGoogleLoading(false);
-        }
-      } catch {
-        setGoogleError("Lỗi kết nối server. Vui lòng thử lại sau.");
-        setGoogleLoading(false);
-      }
-    })();
-  }, []);
-
-  async function handleGoogleLogin() {
-    setGoogleLoading(true);
-    setGoogleError(null);
-    setShowGoogleButton(false);
-
+  function handleGoogleLogin() {
     if (isWebView) return;
-
-    if (!window.google) {
-      await loadGsiScript();
-    } else {
-      promptGoogleLogin();
-    }
-  }
-
-  function loadGsiScript(): Promise<void> {
-    return new Promise((resolve) => {
-      scriptRetryRef.current = 0;
-
-      function attemptLoad() {
-        scriptRetryRef.current++;
-        const script = document.createElement("script");
-        script.src = "https://accounts.google.com/gsi/client";
-        script.async = true;
-        script.defer = true;
-
-        script.onload = () => {
-          promptGoogleLogin();
-          resolve();
-        };
-
-        script.onerror = () => {
-          if (scriptRetryRef.current < 2) {
-            setTimeout(attemptLoad, 2000);
-          } else {
-            setGoogleError("Không thể tải Google Sign-In. Vui lòng thử lại sau.");
-            setGoogleLoading(false);
-            resolve();
-          }
-        };
-
-        document.body.appendChild(script);
-      }
-
-      attemptLoad();
-    });
-  }
-
-  useEffect(() => {
-    if (!showGoogleButton || !googleContainerRef.current || !window.google) return;
-    googleContainerRef.current.innerHTML = "";
-    window.google.accounts.id.renderButton(googleContainerRef.current, {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-    });
-  }, [showGoogleButton]);
-
-  function promptGoogleLogin() {
-    const google = window.google;
-    if (!google) {
-      setGoogleError("Không thể tải Google Sign-In. Vui lòng thử lại.");
-      setGoogleLoading(false);
-      return;
-    }
-
-    if (!google.accounts?.id) {
-      setGoogleError("Google Sign-In không khả dụng trên trình duyệt này. Vui lòng dùng Safari.");
-      setGoogleLoading(false);
-      return;
-    }
-
-    google.accounts.id.initialize({
-      client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
-      callback: handleGoogleCredential,
-      cancel_on_tap_outside: false,
-      error_callback: (err: { type: string; message?: string }) => {
-        setGoogleError(err?.message || "Google Sign-In gặp lỗi. Vui lòng thử lại.");
-        setGoogleLoading(false);
-        setShowGoogleButton(false);
-      },
-    });
-
-    if (isMobile) {
-      // Mobile: One Tap rarely hiển thị → show nút Google luôn
-      setGoogleLoading(false);
-      setShowGoogleButton(true);
-      return;
-    }
-
-    // Desktop: thử One Tap trước
-    fullPickerOpenedRef.current = false;
-
-    google.accounts.id.prompt((notification) => {
-      if (notification.isDismissedMoment()) {
-        const reason = notification.getDismissedReason();
-        if (reason === "cancel" || reason === "dismiss") {
-          setGoogleLoading(false);
-        }
-      }
-      if (notification.isSkippedMoment() || notification.isNotDisplayed()) {
-        openFullPicker();
-      }
-    });
-
-    const timeout = setTimeout(() => {
-      openFullPicker();
-    }, 3000);
-
-    function openFullPicker() {
-      if (fullPickerOpenedRef.current) return;
-      fullPickerOpenedRef.current = true;
-      clearTimeout(timeout);
-      setGoogleLoading(false);
-      setShowGoogleButton(true);
-    }
-  }
-
-  async function handleGoogleCredential(response: { credential: string }) {
-    try {
-      const res = await fetch("/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: response.credential }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        window.location.href = "/";
-      } else {
-        setGoogleError(data.error || "Đăng nhập Google thất bại.");
-      }
-    } catch {
-      setGoogleError("Lỗi kết nối server. Vui lòng thử lại sau.");
-    } finally {
-      setGoogleLoading(false);
-    }
+    // Redirect tới OAuth flow — hoạt động trên mọi trình duyệt/iOS
+    window.location.href = "/api/auth/google/redirect";
   }
 
   return (
@@ -404,8 +250,7 @@ export function LoginForm() {
             id="btn-google-login"
             type="button"
             onClick={handleGoogleLogin}
-            disabled={googleLoading}
-            className="w-full py-3 border border-[rgb(75,85,99)] hover:border-[rgb(251,191,36)] disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 border border-[rgb(75,85,99)] hover:border-[rgb(251,191,36)] text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -413,13 +258,8 @@ export function LoginForm() {
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
-            {googleLoading ? "Đang xác thực..." : "Đăng nhập bằng Google"}
+            Đăng nhập bằng Google
           </button>
-        )}
-
-        {/* Google rendered button (fallback khi One Tap không hiển thị) */}
-        {showGoogleButton && (
-          <div className="w-full flex justify-center mt-4" ref={googleContainerRef} />
         )}
 
         {/* Session info */}
