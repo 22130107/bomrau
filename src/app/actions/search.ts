@@ -3,50 +3,79 @@
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 
-export interface SearchResult {
-  id: number;
-  title: string;
-  price: number;
-  image_url: string;
-  category_slug: string;
-  category_name: string;
+export interface PetSearchResult {
+  name: string;
+  type: "pet" | "san" | "chuong";
+  count: number;
 }
 
-export async function searchAction(query: string): Promise<SearchResult[]> {
+export async function searchPetAction(query: string): Promise<PetSearchResult[]> {
   try {
     if (!query || query.trim().length < 1) return [];
 
     const q = `%${query.trim()}%`;
+    const lowerQuery = query.trim().toLowerCase();
+
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT p.id, p.title, p.price, p.image_url,
-              c.slug as category_slug, c.name as category_name
+      `SELECT DISTINCT p.id, p.title, p.pet_tim, p.san_tim, p.chuong
        FROM products p
-       LEFT JOIN categories c ON p.category_id = c.id
-       WHERE p.status = 'available' AND EXISTS (SELECT 1 FROM accounts WHERE product_id = p.id AND status = 'available')
-         AND (p.title LIKE ? OR p.pet_tim LIKE ? OR p.san_tim LIKE ? OR p.chuong LIKE ? OR p.extra_info LIKE ?)
-       ORDER BY
-         CASE
-           WHEN p.title LIKE ? THEN 0
-           WHEN p.pet_tim LIKE ? THEN 1
-           WHEN p.san_tim LIKE ? THEN 2
-           WHEN p.chuong LIKE ? THEN 3
-           ELSE 4
-         END,
-         p.id DESC
-       LIMIT 10`,
-      [q, q, q, q, q, q, q, q, q]
+       WHERE p.status = 'available'
+         AND (p.pet_tim LIKE ? OR p.san_tim LIKE ? OR p.chuong LIKE ?)
+         AND EXISTS (SELECT 1 FROM accounts WHERE product_id = p.id AND status = 'available')
+       ORDER BY p.id DESC
+       LIMIT 30`,
+      [q, q, q]
     );
 
-    return rows.map(r => ({
-      id: r.id,
-      title: r.title,
-      price: Number(r.price),
-      image_url: r.image_url || "",
-      category_slug: r.category_slug || "",
-      category_name: r.category_name || "",
-    }));
+    const petMap = new Map<string, { type: PetSearchResult["type"]; productIds: Set<number> }>();
+
+    for (const row of rows) {
+      // Match pet_tim
+      if (row.pet_tim) {
+        const names = row.pet_tim.split(',').map((s: string) => s.trim()).filter(Boolean);
+        for (const name of names) {
+          if (name.toLowerCase().includes(lowerQuery)) {
+            if (!petMap.has(name)) petMap.set(name, { type: "pet", productIds: new Set() });
+            petMap.get(name)!.productIds.add(row.id);
+          }
+        }
+      }
+
+      // Match san_tim
+      if (row.san_tim) {
+        const names = row.san_tim.split(',').map((s: string) => s.trim()).filter(Boolean);
+        for (const name of names) {
+          if (name.toLowerCase().includes(lowerQuery)) {
+            if (!petMap.has(name)) petMap.set(name, { type: "san", productIds: new Set() });
+            petMap.get(name)!.productIds.add(row.id);
+          }
+        }
+      }
+
+      // Match chuong
+      if (row.chuong) {
+        const names = row.chuong.split(',').map((s: string) => s.trim()).filter(Boolean);
+        for (const name of names) {
+          if (name.toLowerCase().includes(lowerQuery)) {
+            if (!petMap.has(name)) petMap.set(name, { type: "chuong", productIds: new Set() });
+            petMap.get(name)!.productIds.add(row.id);
+          }
+        }
+      }
+    }
+
+    const results: PetSearchResult[] = [];
+    for (const [name, info] of petMap) {
+      results.push({
+        name,
+        type: info.type,
+        count: info.productIds.size,
+      });
+    }
+
+    return results;
   } catch (error) {
-    console.error("Search error:", error);
+    console.error("Search pet error:", error);
     return [];
   }
 }

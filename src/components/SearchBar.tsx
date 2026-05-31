@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { searchAction, SearchResult } from "@/app/actions/search";
+import { searchPetAction, PetSearchResult } from "@/app/actions/search";
 
 export function SearchBar() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<PetSearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -51,7 +51,7 @@ export function SearchBar() {
 
     timerRef.current = setTimeout(async () => {
       setLoading(true);
-      const data = await searchAction(value);
+      const data = await searchPetAction(value);
       setResults(data);
       setIsOpen(data.length > 0);
       setLoading(false);
@@ -89,27 +89,28 @@ export function SearchBar() {
 
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl overflow-hidden z-[9999] shadow-xl animate-fade-in">
-          {results.map(r => (
-            <Link
-              key={r.id}
-              href={`/category/${r.category_slug}/detail.html?id=${r.id}`}
-              onClick={() => { setIsOpen(false); setQuery(""); }}
-              className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgb(31,41,55)] transition-colors border-b border-[rgba(255,255,255,0.05)] last:border-b-0"
-            >
-              <div className="w-10 h-10 rounded-lg border border-[rgb(75,85,99)] overflow-hidden bg-[rgb(17,24,39)] shrink-0 flex items-center justify-center">
-                {r.image_url ? (
-                  <img src={r.image_url} alt={r.title} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-[rgb(251,191,36)] text-[16px] font-bold">?</span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-[13px] font-semibold truncate">{r.title}</p>
-                <p className="text-[rgb(251,191,36)] text-[12px] font-bold">{r.price.toLocaleString("vi-VN")}đ</p>
-              </div>
-              <span className="text-[rgba(238,238,238,0.4)] text-[11px]">{r.category_name}</span>
-            </Link>
-          ))}
+          {results.map(r => {
+            const typeLabel = r.type === "pet" ? "Pet" : r.type === "san" ? "Sàn" : "Chưởng";
+            const typeColor = r.type === "pet" ? "text-[rgb(168,85,247)]" : r.type === "san" ? "text-[rgb(59,130,246)]" : "text-[rgb(251,191,36)]";
+            const typeBorder = r.type === "pet" ? "border-[rgb(168,85,247)]" : r.type === "san" ? "border-[rgb(59,130,246)]" : "border-[rgb(251,191,36)]";
+            const typeBg = r.type === "pet" ? "bg-[rgba(168,85,247,0.1)]" : r.type === "san" ? "bg-[rgba(59,130,246,0.1)]" : "bg-[rgba(251,191,36,0.1)]";
+            return (
+              <Link
+                key={r.name}
+                href={`/search?q=${encodeURIComponent(r.name)}`}
+                onClick={() => { setIsOpen(false); setQuery(""); }}
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-[rgb(31,41,55)] transition-colors border-b border-[rgba(255,255,255,0.05)] last:border-b-0"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-white text-[13px] font-semibold truncate">{r.name}</p>
+                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${typeColor} ${typeBorder} ${typeBg} border`}>{typeLabel}</span>
+                  </div>
+                  <p className="text-[rgba(238,238,238,0.5)] text-[11px]">{r.count} sản phẩm</p>
+                </div>
+              </Link>
+            );
+          })}
           <Link
             href={`/search?q=${encodeURIComponent(query)}`}
             onClick={() => { setIsOpen(false); }}

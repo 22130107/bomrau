@@ -24,25 +24,18 @@ export default async function SearchPage({
   if (q) {
     const like = `%${q}%`;
     const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT p.id, p.title as name, p.image_url, p.original_price as originalPrice,
+      `SELECT DISTINCT p.id, p.title as name, p.image_url, p.original_price as originalPrice,
               p.price, p.discount_percent as discount,
               p.fake_sold_count as sold, p.fake_remaining_count as remaining,
               c.slug as category_slug, c.image_url as category_image
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
-        WHERE p.status = 'available' AND EXISTS (SELECT 1 FROM accounts WHERE product_id = p.id AND status = 'available')
-          AND (p.title LIKE ? OR p.pet_tim LIKE ? OR p.san_tim LIKE ? OR p.chuong LIKE ? OR p.extra_info LIKE ?)
-       ORDER BY
-         CASE
-           WHEN p.title LIKE ? THEN 0
-           WHEN p.pet_tim LIKE ? THEN 1
-           WHEN p.san_tim LIKE ? THEN 2
-           WHEN p.chuong LIKE ? THEN 3
-           ELSE 4
-         END,
-         p.id DESC
+       WHERE p.status = 'available'
+         AND (p.pet_tim LIKE ? OR p.san_tim LIKE ? OR p.chuong LIKE ?)
+         AND EXISTS (SELECT 1 FROM accounts WHERE product_id = p.id AND status = 'available')
+       ORDER BY p.id DESC
        LIMIT 50`,
-      [like, like, like, like, like, like, like, like, like]
+      [like, like, like]
     );
     products = rows;
   }
@@ -58,7 +51,7 @@ export default async function SearchPage({
         <div className="pt-6 md:pt-10 pb-6 md:pb-10">
           <div className="mx-auto w-full max-w-[1200px] px-[14px]">
             <h1 className="font-bold mb-[16px] md:mb-[32px] border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px]">
-              {q ? `Kết quả tìm kiếm: "${q}"` : "Tìm kiếm sản phẩm"}
+              {q ? `Kết quả cho "${q}"` : "Tìm kiếm sản phẩm"}
             </h1>
             {!q ? (
               <p className="text-[rgba(238,238,238,0.6)] text-[16px] italic">Vui lòng nhập từ khóa để tìm kiếm.</p>
