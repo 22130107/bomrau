@@ -12,7 +12,7 @@ export function Navigation({ isLoggedIn, username }: NavigationProps) {
     <nav className="shrink-0 w-full md:w-auto">
       <ul className="flex gap-[8px] md:gap-[16px] justify-center md:justify-start flex-wrap items-center">
         <li className="font-medium list-none text-[14px] md:text-[18px]">
-          <Link href="/thong-bao" className="items-center inline-flex relative gap-[4px] md:gap-[8px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
+          <Link href="/news" className="items-center inline-flex relative gap-[4px] md:gap-[8px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
             <i className="fa-solid fa-bell"></i>
             <span>Thông Báo</span>
           </Link>

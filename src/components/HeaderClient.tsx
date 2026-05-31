@@ -55,7 +55,7 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
           <ul className="flex gap-[8px] md:gap-[12px] justify-center items-center">
 
             <li className="font-medium list-none text-[14px] md:text-[17px]">
-              <Link href="/thong-bao" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
+              <Link href="/news" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
                 <i className="fa-solid fa-bell" />
                 <span>Thông Báo</span>
               </Link>
@@ -107,7 +107,7 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
         <div className="fixed top-[60px] left-0 right-0 md:hidden border-t border-[rgba(254,226,226,0.15)] bg-[rgb(15,23,42)] px-[14px] py-4 animate-fade-in z-[2505]">
           <nav className="flex flex-col gap-3">
 
-            <Link href="/thong-bao" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
+            <Link href="/news" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
               <i className="fa-solid fa-bell" />
               <span>Thông Báo</span>
             </Link>

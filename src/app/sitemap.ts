@@ -11,7 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/category`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/search`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.4 },
     { url: `${BASE_URL}/random`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.4 },
-    { url: `${BASE_URL}/thong-bao`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.5 },
+    { url: `${BASE_URL}/news`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.5 },
   ];
 
   const [categories] = await pool.query<RowDataPacket[]>(
