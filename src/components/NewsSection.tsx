@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
-import { cloudinaryUrl } from "@/lib/cloudinary-url";
+import { CldImage, cloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface NotificationItem {
   title: string;
@@ -73,7 +72,7 @@ export function NewsSection({ notifications = [] }: NewsSectionProps) {
                 <div className="flex flex-col md:flex-row bg-[rgba(15,23,42,0.25)] border border-[rgba(251,191,36,0.15)] rounded-2xl overflow-hidden md:h-[224px]">
                   <figure className="relative overflow-hidden w-full md:w-[320px] md:h-full aspect-[320/224] md:aspect-auto shrink-0 bg-[rgb(17,24,39)]">
                     {currentItem.image ? (
-                      <Image 
+                      <CldImage 
                         src={cloudinaryUrl(currentItem.image)} 
                         fill
                         className={`object-cover transition-opacity duration-300 ${fade ? "opacity-100" : "opacity-0"}`} 

@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { spinAction } from "@/app/actions/random-spin";
 import { getBalanceAction } from "@/app/actions/auth";
-import { cloudinaryUrl } from "@/lib/cloudinary-url";
+import { CldImage, cloudinaryUrl } from "@/lib/cloudinary-url";
 
 export interface SpinProduct {
   id: number;
@@ -195,7 +194,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
         {phase === "spinning" && (
           <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[rgb(251,191,36)] relative bg-[rgb(17,24,39)]">
             {spinProduct && spinProduct.image_url ? (
-              <Image
+              <CldImage
                 src={cloudinaryUrl(spinProduct.image_url)}
                 fill
                 alt={spinProduct.title}
@@ -244,7 +243,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
         {phase === "result" && result && (
           <div className="w-full rounded-2xl overflow-hidden border-2 border-[rgb(253,230,138)] animate-fade-in-up">
             <div className="w-full aspect-[4/3] relative">
-              <Image
+              <CldImage
                 src={cloudinaryUrl(result.product.image_url)}
                 fill
                 alt={result.product.title}

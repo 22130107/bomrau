@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { buyAccountAction } from "@/app/actions/purchase";
 import { getBalanceAction } from "@/app/actions/auth";
-import { cloudinaryUrl } from "@/lib/cloudinary-url";
+import { CldImage, cloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface ProductDetailProps {
   productId: number;
@@ -138,7 +137,7 @@ export function ProductDetail({
                 <span className="block absolute left-0 top-0 right-0 bottom-0 z-[-1] before:absolute before:left-0 before:top-0 before:right-0 before:bottom-0 before:bg-[rgb(220,38,38)] before:content-[''] before:z-[-1] before:rounded-xs after:absolute after:left-0 after:top-0 after:right-0 after:bottom-0 after:bg-[rgb(220,38,38)] after:content-[''] after:rotate-45 after:z-[-1] after:rounded-xs animate-blink-badge"></span>
                 <span className="block text-[rgb(254,239,199)] text-[14px]">%</span>
               </div>
-              <Image src={cloudinaryUrl(image)} fill className="object-contain rounded-2xl" alt={name} sizes="(max-width: 768px) 100vw, 50vw" priority />
+              <CldImage src={cloudinaryUrl(image)} fill className="object-contain rounded-2xl" alt={name} sizes="(max-width: 768px) 100vw, 50vw" priority />
             </figure>
             <div className="flex flex-col grow text-center w-full md:w-[calc(50%-24px)] pt-4 pb-4">
               <button 

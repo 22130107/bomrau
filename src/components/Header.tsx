@@ -27,6 +27,7 @@ export async function Header() {
                 height={60}
                 className="block w-full"
                 priority
+                unoptimized
               />
             </Link>
           </h1>

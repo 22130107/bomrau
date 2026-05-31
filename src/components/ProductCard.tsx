@@ -1,7 +1,6 @@
-import Image from "next/image";
 import Link from "next/link";
 import { DiscountBadge } from "./DiscountBadge";
-import { cloudinaryUrl } from "@/lib/cloudinary-url";
+import { CldImage, cloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface ProductCardProps {
   id: string;
@@ -27,7 +26,7 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
           </div>
           <figure className="relative w-full mt-2 md:mt-3 aspect-[16/9]">
             <DiscountBadge discount={discount} />
-            <Image src={cloudinaryUrl(image)} fill className="object-contain rounded-2xl" alt={name} sizes="(max-width: 768px) 50vw, 33vw" />
+            <CldImage src={cloudinaryUrl(image)} fill className="object-contain rounded-2xl" alt={name} sizes="(max-width: 768px) 50vw, 33vw" />
           </figure>
           <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
             <div className="border-t text-center mt-2 pt-2 md:mt-3 md:pt-3 border-dashed border-t-[rgba(251,191,36,0.4)]">
