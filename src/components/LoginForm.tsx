@@ -64,7 +64,7 @@ export function LoginForm() {
         setShowWebViewModal(true);
       } else {
         // Android WebView: auto-open Chrome
-        window.location.href = "intent://hyunmanga.click/login#Intent;scheme=https;package=com.android.chrome;end";
+        window.location.href = `intent://${window.location.host}/login#Intent;scheme=https;package=com.android.chrome;end`;
       }
       return;
     }
