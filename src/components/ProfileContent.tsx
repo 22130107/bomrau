@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LogoutButton } from "./LogoutButton";
+import { getBalanceAction } from "@/app/actions/auth";
 
 interface PurchasedAccount {
   id: number;
@@ -12,6 +14,17 @@ interface PurchasedAccount {
   status: "pending" | "completed" | "cancelled" | "refunded";
   login_username?: string;
   login_password?: string;
+}
+
+interface DepositHistory {
+  id: number;
+  amount: number;
+  method: "bank_transfer" | "momo" | "card" | null;
+  status: "pending" | "completed" | "failed" | "cancelled";
+  description: string;
+  reference_id: string;
+  date: string;
+  time: string;
 }
 
 interface UserData {
@@ -26,6 +39,7 @@ interface UserData {
   totalSpent: number;
   totalOrders: number;
   purchasedAccounts: PurchasedAccount[];
+  depositHistory: DepositHistory[];
 }
 
 interface ProfileContentProps {
@@ -45,16 +59,53 @@ const ORDER_STATUS: Record<string, { label: string; color: string }> = {
   refunded:  { label: "Hoàn tiền",  color: "text-[rgb(59,130,246)]" },
 };
 
+const DEPOSIT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  pending:   { label: "Chờ xử lý",  color: "text-[rgb(234,179,8)]", bg: "bg-[rgba(234,179,8,0.15)]" },
+  completed: { label: "Thành công", color: "text-[rgb(34,197,94)]", bg: "bg-[rgba(34,197,94,0.15)]" },
+  failed:    { label: "Thất bại",   color: "text-[rgb(239,68,68)]",  bg: "bg-[rgba(239,68,68,0.15)]" },
+  cancelled: { label: "Đã huỷ",     color: "text-[rgb(156,163,175)]", bg: "bg-[rgba(156,163,175,0.15)]" },
+};
+
+const METHOD_LABELS: Record<string, string> = {
+  bank_transfer: "Chuyển khoản ngân hàng",
+  momo: "Ví điện tử MoMo",
+  card: "Thẻ cào điện thoại",
+};
+
 export function ProfileContent({ user }: ProfileContentProps) {
+  const router = useRouter();
   const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "MB";
   const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "0338180818";
   const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "NGUYEN VAN A";
 
-  const [activeTab, setActiveTab] = useState<"info" | "topup" | "history">("info");
+  const [activeTab, setActiveTab] = useState<"info" | "topup" | "history" | "deposits">("info");
   const [topupAmount, setTopupAmount] = useState("100000");
   const [paymentMethod, setPaymentMethod] = useState<"bank" | "momo" | "card">("bank");
   const [showQR, setShowQR] = useState(false);
   const [topupError, setTopupError] = useState<string | null>(null);
+
+  const [balance, setBalance] = useState(user.balance);
+  const [showSuccessBanner, setShowSuccessBanner] = useState<{ amount: number } | null>(null);
+
+  useEffect(() => {
+    setBalance(user.balance);
+  }, [user.balance]);
+
+  useEffect(() => {
+    if (activeTab !== "topup" || !showQR) return;
+
+    const interval = setInterval(async () => {
+      const res = await getBalanceAction();
+      if (res.balance !== undefined && res.balance > balance) {
+        const amountAdded = res.balance - balance;
+        setShowSuccessBanner({ amount: amountAdded });
+        setBalance(res.balance);
+        router.refresh();
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [activeTab, showQR, balance, router]);
 
   // States for copying feedback
   const [copiedBankInfo, setCopiedBankInfo] = useState({ stk: false, amount: false, content: false });
@@ -86,6 +137,28 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
   return (
     <div className="w-full max-w-[800px] mx-auto animate-fade-in-up">
+      {/* ── Success Toast Notification ── */}
+      {showSuccessBanner && (
+        <div className="fixed top-20 right-4 z-50 animate-bounce bg-[rgba(34,197,94,0.15)] border-2 border-[rgb(34,197,94)] backdrop-blur-md rounded-2xl p-4 shadow-[0_0_30px_rgba(34,197,94,0.3)] max-w-sm flex items-start gap-3">
+          <div className="bg-[rgb(34,197,94)] text-black rounded-full p-1.5 shrink-0 mt-0.5">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="flex-1 font-sans">
+            <h4 className="text-[rgb(34,197,94)] font-bold text-[15px] mb-0.5">Nạp tiền thành công!</h4>
+            <p className="text-white text-[13px] leading-relaxed">
+              Tài khoản của bạn đã được cộng <strong className="text-[rgb(34,197,94)] font-extrabold font-[family-name:var(--font-nunito)]">+{showSuccessBanner.amount.toLocaleString("vi-VN")}đ</strong>.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSuccessBanner(null)}
+            className="text-gray-400 hover:text-white shrink-0 font-bold ml-1 text-[16px]"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ── Profile Header ───────────────────────────────────────────────── */}
       <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-6 md:p-8 mb-6 shadow-[0_0_30px_rgba(251,191,36,0.1)]">
@@ -122,7 +195,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
           <div className="text-center md:text-right shrink-0">
             <p className="text-[rgba(238,238,238,0.7)] text-[13px]">Số dư</p>
             <p className="text-[rgb(251,191,36)] text-[24px] md:text-[30px] font-bold font-[family-name:var(--font-nunito)] animate-pulse">
-              {user.balance.toLocaleString("vi-VN")}đ
+              {balance.toLocaleString("vi-VN")}đ
             </p>
           </div>
         </div>
@@ -144,16 +217,22 @@ export function ProfileContent({ user }: ProfileContentProps) {
 
       {/* ── Tabs ─────────────────────────────────────────────────────────── */}
       <div className="flex mb-6 bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl overflow-hidden">
-        {(["info", "topup", "history"] as const).map((tab) => (
+        {(["info", "topup", "history", "deposits"] as const).map((tab) => (
           <button
             key={tab}
             id={`tab-${tab}`}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-[13px] md:text-[16px] font-bold transition-colors cursor-pointer ${
+            className={`flex-1 py-3 text-[11px] md:text-[14px] font-bold transition-colors cursor-pointer ${
               activeTab === tab ? "bg-[rgb(202,138,4)] text-black font-extrabold" : "text-[rgba(238,238,238,0.7)] hover:text-white"
             }`}
           >
-            {tab === "info" ? "Thông tin" : tab === "topup" ? "Nạp tiền" : `Lịch sử mua (${user.purchasedAccounts.length})`}
+            {tab === "info"
+              ? "Thông tin"
+              : tab === "topup"
+                ? "Nạp tiền"
+                : tab === "history"
+                  ? `Lịch sử mua (${user.purchasedAccounts.length})`
+                  : `Lịch sử nạp (${user.depositHistory?.length || 0})`}
           </button>
         ))}
       </div>
@@ -180,7 +259,7 @@ export function ProfileContent({ user }: ProfileContentProps) {
               },
               {
                 label: "Số dư",
-                value: <span className="text-[rgb(251,191,36)] font-bold text-[16px]">{user.balance.toLocaleString("vi-VN")}đ</span>,
+                value: <span className="text-[rgb(251,191,36)] font-bold text-[16px]">{balance.toLocaleString("vi-VN")}đ</span>,
               },
               { label: "Tổng acc đã mua", value: `${user.purchasedAccounts.length} acc` },
               {
@@ -490,6 +569,62 @@ export function ProfileContent({ user }: ProfileContentProps) {
                             </div>
                           </div>
                         </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab: Lịch sử nạp */}
+        {activeTab === "deposits" && (
+          <div className="flex flex-col gap-4">
+            <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold mb-2">
+              Lịch sử nạp tiền
+            </h3>
+
+            {!user.depositHistory || user.depositHistory.length === 0 ? (
+              <div className="flex flex-col items-center py-12 gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 text-[rgba(238,238,238,0.2)]">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <p className="text-center text-[rgba(238,238,238,0.5)] text-[14px]">Bạn chưa có giao dịch nạp tiền nào.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {user.depositHistory.map((dep) => {
+                  const statusStyle = DEPOSIT_STATUS[dep.status] ?? DEPOSIT_STATUS.pending;
+                  const methodLabel = METHOD_LABELS[dep.method || ""] || "Khác";
+                  return (
+                    <div
+                      key={dep.id}
+                      className="flex flex-col p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] hover:border-[rgba(251,191,36,0.4)] transition-colors"
+                    >
+                      <div className="flex justify-between items-start w-full">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-white font-semibold text-[14px] md:text-[15px]">{methodLabel}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-[rgba(238,238,238,0.5)] text-[12px]">{dep.date} lúc {dep.time}</p>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${statusStyle.bg} ${statusStyle.color}`}>
+                              {statusStyle.label}
+                            </span>
+                          </div>
+                          {dep.reference_id && (
+                            <p className="text-[rgba(238,238,238,0.4)] text-[11px] font-mono mt-0.5">
+                              Mã GD: {dep.reference_id}
+                            </p>
+                          )}
+                        </div>
+                        <p className="text-[rgb(34,197,94)] font-bold text-[15px] md:text-[17px] shrink-0 ml-3">
+                          +{dep.amount.toLocaleString("vi-VN")}đ
+                        </p>
+                      </div>
+                      {dep.description && (
+                        <p className="mt-2 text-[12px] text-[rgba(238,238,238,0.6)] bg-[rgb(15,23,42)] p-2 rounded border border-gray-800 leading-relaxed font-sans">
+                          {dep.description}
+                        </p>
                       )}
                     </div>
                   );

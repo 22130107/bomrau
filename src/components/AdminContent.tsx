@@ -196,6 +196,7 @@ export interface AdminContentProps {
   initialOrders: AdminOrder[];
   initialNotifications: AdminNotification[];
   initialSpinCategories: AdminSpinCategory[];
+  initialSpinCost: number;
 }
 
 export function AdminContent({
@@ -208,6 +209,7 @@ export function AdminContent({
   initialOrders,
   initialNotifications,
   initialSpinCategories,
+  initialSpinCost,
 }: AdminContentProps) {
   const [activeTab, setActiveTab] = useState<
     | "stats"
@@ -271,24 +273,25 @@ export function AdminContent({
   });
 
   const productFormRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (showAddProduct && productFormRef.current) {
-      productFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [showAddProduct]);
+  const accountFormRef = useRef<HTMLDivElement>(null);
+  const categoryFormRef = useRef<HTMLDivElement>(null);
+  const notificationFormRef = useRef<HTMLDivElement>(null);
+  const distributorFormRef = useRef<HTMLDivElement>(null);
 
   // States cho lọc sản phẩm
-  const [spinCost, setSpinCost] = useState(10000);
-  const [spinCostInput, setSpinCostInput] = useState("10000");
+  const [spinCost, setSpinCost] = useState(initialSpinCost);
+  const [spinCostInput, setSpinCostInput] = useState(String(initialSpinCost));
   const [savingSpinCost, setSavingSpinCost] = useState(false);
+  const [spinCategories, setSpinCategories] = useState(initialSpinCategories);
 
   useEffect(() => {
-    getSpinCostAction().then((res) => {
-      setSpinCost(res.cost);
-      setSpinCostInput(String(res.cost));
-    });
-  }, []);
+    setSpinCost(initialSpinCost);
+    setSpinCostInput(String(initialSpinCost));
+  }, [initialSpinCost]);
+
+  useEffect(() => {
+    setSpinCategories(initialSpinCategories);
+  }, [initialSpinCategories]);
 
   const [productSearchTerm, setProductSearchTerm] = useState("");
   const [productCategoryFilter, setProductCategoryFilter] = useState(0);
@@ -310,6 +313,7 @@ export function AdminContent({
   // States cho Kho (thêm account từ sản phẩm)
   const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
   const [productAccountSearch, setProductAccountSearch] = useState("");
+  const [productAccountStatusFilter, setProductAccountStatusFilter] = useState<string>("all");
   const [showBulkAccountInput, setShowBulkAccountInput] = useState(false);
   const [bulkAccountInput, setBulkAccountInput] = useState("");
   const [productAccountForm, setProductAccountForm] = useState({
@@ -360,6 +364,7 @@ export function AdminContent({
   const [accountSearchTerm, setAccountSearchTerm] = useState("");
   const [selectedCategoryForAccount, setSelectedCategoryForAccount] =
     useState<number>(0);
+  const [accountStatusFilter, setAccountStatusFilter] = useState<string>("all");
   const [accountForm, setAccountForm] = useState<AccountFormData>({
     product_id: 0,
     distributor_id: null,
@@ -413,6 +418,36 @@ export function AdminContent({
     username: "",
     password: "",
   });
+
+  useEffect(() => {
+    if (showAddProduct && productFormRef.current) {
+      productFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showAddProduct, editingProductId]);
+
+  useEffect(() => {
+    if (showAddAccount && accountFormRef.current) {
+      accountFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showAddAccount, editingAccountId]);
+
+  useEffect(() => {
+    if (showAddCategory && categoryFormRef.current) {
+      categoryFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showAddCategory, editingCategoryId]);
+
+  useEffect(() => {
+    if (showAddNotification && notificationFormRef.current) {
+      notificationFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showAddNotification, editingNotificationId]);
+
+  useEffect(() => {
+    if (showAddDistributor && distributorFormRef.current) {
+      distributorFormRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showAddDistributor, editingDistributorId]);
 
   // States cho User detail
   const [showUserDetail, setShowUserDetail] = useState(false);
@@ -1225,6 +1260,7 @@ export function AdminContent({
                         expandedProductId === p.id ? null : p.id,
                       );
                       setProductAccountSearch("");
+                      setProductAccountStatusFilter("all");
                       setShowBulkAccountInput(false);
                       setBulkAccountInput("");
                       setProductAccountForm({
@@ -1547,14 +1583,24 @@ export function AdminContent({
                           </div>
 
                           {/* Danh sách tài khoản của sản phẩm */}
-                          <div className="mb-2">
+                          <div className="flex gap-2 mb-2">
                             <input
                               type="text"
                               placeholder="🔍 Tìm tài khoản..."
                               value={productAccountSearch}
                               onChange={(e) => setProductAccountSearch(e.target.value)}
-                              className="w-full px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] outline-none focus:border-[rgb(251,191,36)]"
+                              className="flex-1 px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] outline-none focus:border-[rgb(251,191,36)]"
                             />
+                            <select
+                              value={productAccountStatusFilter}
+                              onChange={(e) => setProductAccountStatusFilter(e.target.value)}
+                              className="px-2 py-1.5 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[12px] outline-none focus:border-[rgb(251,191,36)]"
+                            >
+                              <option value="all">Tất cả trạng thái</option>
+                              <option value="available">Tồn kho</option>
+                              <option value="sold">Đã giao</option>
+                              <option value="hidden">Lỗi/Ẩn</option>
+                            </select>
                           </div>
                           <div className="overflow-x-auto">
                             <table className="w-full text-[12px]">
@@ -1565,18 +1611,27 @@ export function AdminContent({
                                   <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Password</th>
                                   <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Giá nhập</th>
                                   <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Trạng thái</th>
+                                  <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Sửa</th>
                                   <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">Xóa</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {initialAccounts.filter(a => a.product_id === p.id && (!productAccountSearch || a.login_username.toLowerCase().includes(productAccountSearch.toLowerCase()))).length === 0 ? (
+                                {initialAccounts.filter(a =>
+                                  a.product_id === p.id &&
+                                  (!productAccountSearch || a.login_username.toLowerCase().includes(productAccountSearch.toLowerCase())) &&
+                                  (productAccountStatusFilter === "all" || a.status === productAccountStatusFilter)
+                                ).length === 0 ? (
                                   <tr>
-                                    <td colSpan={6} className="py-4 text-center text-[rgba(238,238,238,0.4)] text-[12px]">
-                                      Chưa có tài khoản nào trong kho.
+                                    <td colSpan={7} className="py-4 text-center text-[rgba(238,238,238,0.4)] text-[12px]">
+                                      Chưa có tài khoản nào trong kho phù hợp bộ lọc.
                                     </td>
                                   </tr>
                                 ) : (
-                                  initialAccounts.filter(a => a.product_id === p.id && (!productAccountSearch || a.login_username.toLowerCase().includes(productAccountSearch.toLowerCase()))).map((a) => (
+                                  initialAccounts.filter(a =>
+                                    a.product_id === p.id &&
+                                    (!productAccountSearch || a.login_username.toLowerCase().includes(productAccountSearch.toLowerCase())) &&
+                                    (productAccountStatusFilter === "all" || a.status === productAccountStatusFilter)
+                                  ).map((a) => (
                                     <tr key={a.id} className="border-b border-[rgb(55,65,81)]">
                                       <td className="py-2 text-white">#{a.id}</td>
                                       <td className="py-2 text-white">{a.login_username}</td>
@@ -1586,6 +1641,33 @@ export function AdminContent({
                                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${a.status === "available" ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : a.status === "sold" ? "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]" : "bg-[rgba(107,114,128,0.2)] text-[rgb(156,163,175)]"}`}>
                                           {a.status === "available" ? "Tồn kho" : a.status === "sold" ? "Đã giao" : "Lỗi/Ẩn"}
                                         </span>
+                                      </td>
+                                      <td className="py-2">
+                                        <button
+                                          onClick={() => {
+                                            const prod = initialProducts.find(
+                                              (pr) => pr.id === a.product_id,
+                                            );
+                                            setSelectedCategoryForAccount(
+                                              prod ? prod.category_id : 0,
+                                            );
+                                            setAccountForm({
+                                              product_id: a.product_id,
+                                              distributor_id: a.distributor_id,
+                                              login_username: a.login_username,
+                                              login_password: a.login_password,
+                                              cost_price: a.cost_price,
+                                              status: a.status,
+                                              note: a.note,
+                                            });
+                                            setEditingAccountId(a.id);
+                                            setShowAddAccount(true);
+                                            setActiveTab("accounts");
+                                          }}
+                                          className="px-2 py-0.5 bg-[rgb(59,130,246)] text-white text-[10px] rounded hover:bg-[rgb(37,99,235)] transition-colors"
+                                        >
+                                          Sửa
+                                        </button>
                                       </td>
                                       <td className="py-2">
                                         <button
@@ -1649,7 +1731,7 @@ export function AdminContent({
             </button>
           </div>
           {showAddAccount && (
-            <div className="mb-6 p-4 md:p-6 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+            <div ref={accountFormRef} className="mb-6 p-4 md:p-6 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
               <h4 className="text-[rgb(251,191,36)] font-bold text-[16px] mb-4">
                 {editingAccountId
                   ? "Sửa tài khoản"
@@ -1851,6 +1933,16 @@ export function AdminContent({
                 </option>
               ))}
             </select>
+            <select
+              value={accountStatusFilter}
+              onChange={(e) => setAccountStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="available">Tồn kho</option>
+              <option value="sold">Đã giao</option>
+              <option value="hidden">Lỗi/Ẩn</option>
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
@@ -1877,6 +1969,7 @@ export function AdminContent({
                       const prod = initialProducts.find(p => p.id === a.product_id);
                       if (!prod || prod.category_id !== selectedCategoryForAccount) return false;
                     }
+                    if (accountStatusFilter !== "all" && a.status !== accountStatusFilter) return false;
                     if (accountSearchTerm && !a.login_username.toLowerCase().includes(accountSearchTerm.toLowerCase())) return false;
                     return true;
                   })
@@ -1989,7 +2082,7 @@ export function AdminContent({
           </div>
 
           {showAddCategory && (
-            <div className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+            <div ref={categoryFormRef} className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
               <h4 className="text-white font-bold text-[14px] mb-3">
                 {editingCategoryId ? "Sửa danh mục" : "Thêm danh mục mới"}
               </h4>
@@ -2309,7 +2402,7 @@ export function AdminContent({
           </div>
 
           {showAddDistributor && (
-            <div className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
+            <div ref={distributorFormRef} className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
               <h4 className="text-[rgb(251,191,36)] font-bold text-[16px] mb-4">
                 {editingDistributorId ? "Sửa NPP" : "Thêm NPP mới"}
               </h4>
@@ -2994,7 +3087,7 @@ export function AdminContent({
           </div>
 
           {showAddNotification && (
-            <div className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] animate-fade-in">
+            <div ref={notificationFormRef} className="mb-6 p-4 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)] animate-fade-in">
               <h4 className="text-white font-bold text-[14px] mb-3">
                 {editingNotificationId ? "Sửa thông báo" : "Thêm thông báo mới"}
               </h4>
@@ -3341,14 +3434,14 @@ export function AdminContent({
                 </tr>
               </thead>
               <tbody>
-                {initialSpinCategories.length === 0 ? (
+                {spinCategories.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
                       Chưa có danh mục nào.
                     </td>
                   </tr>
                 ) : (
-                  initialSpinCategories.map((cat) => (
+                  spinCategories.map((cat) => (
                     <tr key={cat.id} className="border-b border-[rgb(55,65,81)]">
                       <td className="py-3 text-white font-semibold">{cat.name}</td>
                       <td className="py-3">
@@ -3360,9 +3453,18 @@ export function AdminContent({
                         <button
                           disabled={isPending}
                           onClick={() => {
+                            const nextVal = !cat.is_spin_enabled;
+                            setSpinCategories(prev =>
+                              prev.map(c => c.id === cat.id ? { ...c, is_spin_enabled: nextVal } : c)
+                            );
                             startTransition(async () => {
-                              const res = await toggleCategorySpinAction(cat.id, !cat.is_spin_enabled);
-                              if (res.error) alert(res.error);
+                              const res = await toggleCategorySpinAction(cat.id, nextVal);
+                              if (res.error) {
+                                alert(res.error);
+                                setSpinCategories(prev =>
+                                  prev.map(c => c.id === cat.id ? { ...c, is_spin_enabled: !nextVal } : c)
+                                );
+                              }
                             });
                           }}
                           className={`relative inline-flex w-12 h-6 rounded-full transition-colors ${

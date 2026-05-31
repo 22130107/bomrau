@@ -50,7 +50,8 @@ export default async function AdminPage() {
     SELECT c.id, c.name, c.is_spin_enabled,
            (SELECT COUNT(*) FROM accounts a
             JOIN products p ON a.product_id = p.id
-            WHERE p.category_id = c.id AND a.status = 'available' AND p.status = 'available') as available_accounts
+            WHERE (p.category_id = c.id OR JSON_CONTAINS(p.extra_categories, CAST(c.id AS JSON)))
+              AND a.status = 'available' AND p.status = 'available') as available_accounts
     FROM categories c
     ORDER BY c.sort_order ASC
   `);
@@ -61,6 +62,12 @@ export default async function AdminPage() {
     is_spin_enabled: Boolean(row.is_spin_enabled),
     available_accounts: Number(row.available_accounts) || 0,
   }));
+
+  // Fetch Spin Cost
+  const [spinCostRows] = await pool.query<RowDataPacket[]>(
+    "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
+  );
+  const initialSpinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 10000;
 
   // 2. Fetch Products
   const [productRows] = await pool.query<RowDataPacket[]>(`
@@ -230,6 +237,7 @@ export default async function AdminPage() {
           initialOrders={initialOrders}
           initialNotifications={initialNotifications}
           initialSpinCategories={initialSpinCategories}
+          initialSpinCost={initialSpinCost}
         />
       </main>
       <Footer />

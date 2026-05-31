@@ -38,6 +38,16 @@ interface StatsRow extends RowDataPacket {
   total_orders: number;
 }
 
+interface DepositRow extends RowDataPacket {
+  id: number;
+  amount: number;
+  method: "bank_transfer" | "momo" | "card" | null;
+  status: "pending" | "completed" | "failed" | "cancelled";
+  description: string | null;
+  reference_id: string | null;
+  created_at: string;
+}
+
 export default async function ProfilePage() {
   const session = await getSession();
   if (!session) redirect("/login");
@@ -75,6 +85,16 @@ export default async function ProfilePage() {
     [session.userId]
   );
 
+  // ── 4. Lịch sử nạp tiền ───────────────────────────────────────────────────
+  const [depositRows] = await pool.query<DepositRow[]>(
+    `SELECT id, amount, method, status, description, reference_id, created_at
+     FROM transactions
+     WHERE user_id = ? AND type = 'deposit'
+     ORDER BY created_at DESC
+     LIMIT 50`,
+    [session.userId]
+  );
+
   return (
     <div className="pt-[70px] md:pt-[90px] min-h-screen flex flex-col">
       <Header />
@@ -99,6 +119,16 @@ export default async function ProfilePage() {
               status: o.status,
               login_username: o.login_username || undefined,
               login_password: o.login_password || undefined,
+            })),
+            depositHistory: depositRows.map((d) => ({
+              id: d.id,
+              amount: Number(d.amount),
+              method: d.method,
+              status: d.status,
+              description: d.description || "",
+              reference_id: d.reference_id || "",
+              date: new Date(d.created_at).toLocaleDateString("vi-VN"),
+              time: new Date(d.created_at).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }),
             })),
           }}
         />

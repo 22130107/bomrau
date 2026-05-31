@@ -33,8 +33,15 @@ export default async function RandomPage() {
            (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as available_accounts
     FROM products p
     JOIN categories c ON p.category_id = c.id
-    WHERE c.is_spin_enabled = 1
-      AND p.status = 'available'
+    WHERE p.status = 'available'
+      AND (
+        c.is_spin_enabled = 1
+        OR EXISTS (
+          SELECT 1 FROM categories ec
+          WHERE ec.is_spin_enabled = 1
+            AND JSON_CONTAINS(p.extra_categories, CAST(ec.id AS JSON))
+        )
+      )
     ORDER BY p.is_pinned DESC, p.id DESC
   `);
 
