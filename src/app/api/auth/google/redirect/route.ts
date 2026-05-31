@@ -2,19 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 /**
- * Lấy origin thật — khi chạy sau reverse proxy (Nginx),
- * request.nextUrl.origin có thể trả về http://localhost:3000.
+ * Lấy origin thật từ request — hỗ trợ đa tên miền.
+ * Dùng host header để xây dựng origin động, không fix cứng vào NEXT_PUBLIC_BASE_URL.
  */
 function getOrigin(request: NextRequest): string {
-  // Ưu tiên env var nếu có
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
-  }
-  // Đọc từ headers proxy
   const proto = request.headers.get("x-forwarded-proto") || "https";
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
   if (host) {
     return `${proto}://${host}`;
+  }
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
   }
   return request.nextUrl.origin;
 }
@@ -24,21 +22,6 @@ function getOrigin(request: NextRequest): string {
  * Redirect user tới Google Authorization Server.
  */
 export async function GET(request: NextRequest) {
-  // Nếu host của request hiện tại khác với NEXT_PUBLIC_BASE_URL,
-  // ta redirect về đúng domain chính để đảm bảo đồng bộ Cookie khi callback.
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    try {
-      const baseUrl = new URL(process.env.NEXT_PUBLIC_BASE_URL);
-      const host = request.headers.get("host") || "";
-      if (host && host !== baseUrl.host) {
-        const targetUrl = new URL(request.nextUrl.pathname + request.nextUrl.search, process.env.NEXT_PUBLIC_BASE_URL);
-        return NextResponse.redirect(targetUrl);
-      }
-    } catch (e) {
-      console.error("Error parsing NEXT_PUBLIC_BASE_URL:", e);
-    }
-  }
-
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId) {
     return NextResponse.json({ error: "Missing GOOGLE_CLIENT_ID" }, { status: 500 });
