@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface NotificationItem {
   title: string;
@@ -69,12 +71,14 @@ export function NewsSection({ notifications = [] }: NewsSectionProps) {
             <li className="flex flex-wrap gap-[32px]">
               <article className="w-full">
                 <div className="flex flex-col md:flex-row bg-[rgba(15,23,42,0.25)] border border-[rgba(251,191,36,0.15)] rounded-2xl overflow-hidden md:h-[224px]">
-                  <figure className="overflow-hidden w-full md:w-[320px] md:h-full aspect-[320/224] md:aspect-auto shrink-0 bg-[rgb(17,24,39)]">
+                  <figure className="relative overflow-hidden w-full md:w-[320px] md:h-full aspect-[320/224] md:aspect-auto shrink-0 bg-[rgb(17,24,39)]">
                     {currentItem.image ? (
-                      <img 
-                        src={currentItem.image} 
-                        className={`block size-full object-cover transition-opacity duration-300 ${fade ? "opacity-100" : "opacity-0"}`} 
-                        alt="Thông báo" 
+                      <Image 
+                        src={cloudinaryUrl(currentItem.image)} 
+                        fill
+                        className={`object-cover transition-opacity duration-300 ${fade ? "opacity-100" : "opacity-0"}`} 
+                        alt="Thông báo"
+                        sizes="(max-width: 768px) 100vw, 320px"
                       />
                     ) : (
                       <div className="flex items-center justify-center size-full text-[rgb(251,191,36)] text-[32px] font-bold">

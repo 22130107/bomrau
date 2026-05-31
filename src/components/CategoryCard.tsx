@@ -1,4 +1,6 @@
+import Image from "next/image";
 import Link from "next/link";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface CategoryCardProps {
   image: string;
@@ -16,7 +18,7 @@ export function CategoryCard({ image, alt, title, price, sold, remaining, href }
       <div className="h-full md:clip-diagonal md:bg-[rgb(253,230,138)] md:p-[1px]">
         <article className="flex flex-col size-full relative bg-[rgb(2,6,23)] rounded-2xl md:rounded-none md:clip-diagonal p-2 md:p-4 pb-2.5 md:pb-6 border border-[rgb(253,230,138)] md:border-none">
           <figure className="relative w-full aspect-[16/9]">
-            <img alt={alt} src={image} className="block size-full object-cover absolute left-0 top-0 right-0 bottom-0 rounded-2xl" />
+            <Image src={cloudinaryUrl(image)} fill className="object-cover rounded-2xl" alt={alt} sizes="(max-width: 768px) 50vw, 33vw" />
           </figure>
           <div className="flex flex-col grow text-center pt-1 pb-1 md:pt-4 md:pb-4">
             <h3 className="font-bold mb-auto text-center text-[rgb(251,191,36)] text-[14px] md:text-[20px] leading-[20px] md:leading-[32px] min-h-10 md:min-h-16">{title}</h3>

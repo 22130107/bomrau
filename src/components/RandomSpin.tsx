@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { spinAction } from "@/app/actions/random-spin";
 import { getBalanceAction } from "@/app/actions/auth";
+import { cloudinaryUrl } from "@/lib/cloudinary-url";
 
 export interface SpinProduct {
   id: number;
@@ -193,10 +195,11 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
         {phase === "spinning" && (
           <div className="w-full aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[rgb(251,191,36)] relative bg-[rgb(17,24,39)]">
             {spinProduct && spinProduct.image_url ? (
-              <img
-                src={spinProduct.image_url}
+              <Image
+                src={cloudinaryUrl(spinProduct.image_url)}
+                fill
                 alt={spinProduct.title}
-                className="w-full h-full object-contain p-4 md:p-8 animate-pulse"
+                className="object-contain p-4 md:p-8 animate-pulse"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -241,10 +244,11 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
         {phase === "result" && result && (
           <div className="w-full rounded-2xl overflow-hidden border-2 border-[rgb(253,230,138)] animate-fade-in-up">
             <div className="w-full aspect-[4/3] relative">
-              <img
-                src={result.product.image_url}
+              <Image
+                src={cloudinaryUrl(result.product.image_url)}
+                fill
                 alt={result.product.title}
-                className="w-full h-full object-cover"
+                className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[rgba(2,6,23,0.95)] via-transparent to-transparent flex flex-col justify-end p-4 md:p-6">
                 <p className="text-white text-[13px] md:text-[14px] mb-1">Chúc mừng! Bạn đã nhận:</p>
