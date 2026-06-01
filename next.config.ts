@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     cpus: 1,
     serverActions: {
       bodySizeLimit: "10mb",
-      allowedOrigins: ["*"],
+      allowedOrigins: ["bomrautft.com"],
     },
   },
   images: {
