@@ -159,7 +159,6 @@ export async function registerAction(
 // ─── ĐĂNG XUẤT ───────────────────────────────────────────────────────────────
 export async function logoutAction() {
   await deleteSession();
-  redirect("/login");
 }
 
 export async function getBalanceAction(): Promise<{ balance?: number; error?: string }> {

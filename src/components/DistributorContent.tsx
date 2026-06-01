@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { getNppDataAction, SoldAccount, BuyerInfo } from "@/app/actions/npp";
 import { logoutAction } from "@/app/actions/auth";
 
 export function DistributorContent() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"revenue" | "buyers">("revenue");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function DistributorContent() {
           </p>
         </div>
         <button 
-          onClick={() => startTransition(() => logoutAction())}
+          onClick={() => startTransition(async () => { await logoutAction(); router.push("/login"); })}
           disabled={isPending}
           className="px-4 py-2 bg-[rgb(220,38,38)] hover:bg-[rgb(185,28,28)] disabled:opacity-60 text-white font-bold text-[12px] md:text-[13px] rounded-lg transition-colors cursor-pointer"
         >
