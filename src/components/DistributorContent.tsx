@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect } from "react";
 import { getNppDataAction, SoldAccount, BuyerInfo } from "@/app/actions/npp";
-import { logoutAction } from "@/app/actions/auth";
 
 export function DistributorContent() {
   const [activeTab, setActiveTab] = useState<"revenue" | "buyers">("revenue");
@@ -12,7 +11,7 @@ export function DistributorContent() {
   const [domain, setDomain] = useState("");
   const [soldAccounts, setSoldAccounts] = useState<SoldAccount[]>([]);
   const [buyers, setBuyers] = useState<BuyerInfo[]>([]);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -74,7 +73,11 @@ export function DistributorContent() {
           </p>
         </div>
         <button 
-          onClick={() => startTransition(() => logoutAction())}
+          onClick={async () => {
+            setIsPending(true);
+            await fetch("/api/auth/logout", { method: "POST" });
+            window.location.href = "/login";
+          }}
           disabled={isPending}
           className="px-4 py-2 bg-[rgb(220,38,38)] hover:bg-[rgb(185,28,28)] disabled:opacity-60 text-white font-bold text-[12px] md:text-[13px] rounded-lg transition-colors cursor-pointer"
         >
