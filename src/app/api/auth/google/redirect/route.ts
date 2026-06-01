@@ -2,17 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 /**
- * Lấy origin thật từ request — hỗ trợ đa tên miền.
- * Dùng host header để xây dựng origin động, không fix cứng vào NEXT_PUBLIC_BASE_URL.
+ * Lấy origin thật từ request — ưu tiên biến môi trường, fallback về header.
  */
 function getOrigin(request: NextRequest): string {
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
   const proto = request.headers.get("x-forwarded-proto") || "https";
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
   if (host) {
     return `${proto}://${host}`;
-  }
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
   }
   return request.nextUrl.origin;
 }
