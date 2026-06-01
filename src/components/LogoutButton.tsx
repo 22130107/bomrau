@@ -1,17 +1,15 @@
 "use client";
 
 import { logoutAction } from "@/app/actions/auth";
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 export function LogoutButton() {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   return (
     <button
       id="btn-logout"
-      onClick={() => startTransition(async () => { await logoutAction(); router.push("/login"); })}
+      onClick={() => startTransition(() => logoutAction())}
       disabled={isPending}
       className="mt-4 w-full py-3 bg-[rgb(220,38,38)] hover:bg-[rgb(185,28,28)] disabled:opacity-60 text-white font-bold text-[16px] rounded-lg transition-colors flex items-center justify-center gap-2"
     >
