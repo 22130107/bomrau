@@ -28,6 +28,9 @@ interface UserRow extends RowDataPacket {
  * Lấy origin thật từ request — ưu tiên URL request gốc, fallback về header.
  */
 function getOrigin(request: NextRequest): string {
+  if (process.env.NEXT_PUBLIC_BASE_URL) {
+    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
+  }
   return request.nextUrl.origin;
 }
 
