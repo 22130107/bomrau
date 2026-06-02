@@ -264,7 +264,7 @@ export function AdminContent({
   const [productForm, setProductForm] = useState<ProductFormData>({
     title: "",
     category_id: 0,
-    extra_categories: [],
+    extra_categories: [2],
     image_url: "",
     price: 0,
     original_price: 0,
@@ -767,7 +767,7 @@ export function AdminContent({
                 setProductForm({
                   title: "",
                   category_id: initialCategories[0]?.id || 0,
-                  extra_categories: [],
+                  extra_categories: [2],
                   image_url: "",
                   price: 0,
                   original_price: 0,
@@ -840,6 +840,13 @@ export function AdminContent({
                   <label className="text-[12px] text-[rgba(238,238,238,0.6)]">
                     Danh mục phụ <span className="text-[rgba(238,238,238,0.3)]">(chọn thêm)</span>
                   </label>
+                  <div className="flex items-center gap-2 px-2 py-1">
+                    <span className="text-[11px] text-[rgba(238,238,238,0.4)]">Tự động: Giá &gt; 2.999.000đ →</span>
+                    <span className={`text-[11px] font-bold ${productForm.price > 2999000 ? "text-[rgb(251,191,36)]" : "text-[rgba(238,238,238,0.3)]"}`}>ACC Vip</span>
+                    <span className="text-[rgba(238,238,238,0.15)]">|</span>
+                    <span className="text-[11px] text-[rgba(238,238,238,0.4)]">Giá ≤ 2.999.000đ →</span>
+                    <span className={`text-[11px] font-bold ${productForm.price <= 2999000 && productForm.price > 0 ? "text-[rgb(34,197,94)]" : "text-[rgba(238,238,238,0.3)]"}`}>Siêu Rẻ</span>
+                  </div>
                   <div className="flex flex-wrap gap-2 p-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg">
                     {initialCategories
                       .filter(c => c.id !== productForm.category_id)
@@ -968,9 +975,13 @@ export function AdminContent({
                     onChange={(e) => {
                       const p = Number(e.target.value);
                       const d = productForm.discount_percent;
+                      const autoCat = p > 2999000 ? 1 : 2;
                       setProductForm({
                         ...productForm,
                         price: p,
+                        extra_categories: productForm.extra_categories.includes(autoCat)
+                          ? productForm.extra_categories
+                          : [...productForm.extra_categories, autoCat],
                         original_price:
                           d > 0 && p > 0 ? Math.round(p / (1 - d / 100)) : productForm.original_price,
                         discount_percent:

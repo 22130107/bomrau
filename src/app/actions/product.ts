@@ -27,6 +27,13 @@ export interface ProductFormData {
   account_note?: string;
 }
 
+function autoExtraCategories(price: number, manual: number[] = []): number[] {
+  const auto = price > 2999000 ? 1 : 2;
+  const set = new Set(manual);
+  set.add(auto);
+  return Array.from(set);
+}
+
 export async function createProductAction(data: ProductFormData) {
   try {
     const session = await getSession();
@@ -45,7 +52,7 @@ export async function createProductAction(data: ProductFormData) {
         fake_sold_count, fake_remaining_count, status, is_pinned, pet_tim, san_tim, chuong, extra_info
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        data.category_id, JSON.stringify(data.extra_categories || []), data.title, data.image_url || "", data.price, data.original_price || 0,
+        data.category_id, JSON.stringify(autoExtraCategories(data.price, data.extra_categories)), data.title, data.image_url || "", data.price, data.original_price || 0,
         Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
         data.status || "available", data.is_pinned ? 1 : 0, data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null
       ]
@@ -107,7 +114,7 @@ export async function updateProductAction(id: number, data: ProductFormData) {
         pet_tim=?, san_tim=?, chuong=?, extra_info=?
       WHERE id=?`,
       [
-        data.category_id, JSON.stringify(data.extra_categories || []), data.title, data.image_url || "", data.price, data.original_price || 0,
+        data.category_id, JSON.stringify(autoExtraCategories(data.price, data.extra_categories)), data.title, data.image_url || "", data.price, data.original_price || 0,
         Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
         data.status || "available", data.is_pinned ? 1 : 0, data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null, id
       ]
