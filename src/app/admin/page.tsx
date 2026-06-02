@@ -33,6 +33,14 @@ export default async function AdminPage() {
      ORDER BY month ASC
      LIMIT 12`
   );
+  const [dailyRevenueRows] = await pool.query<RowDataPacket[]>(
+    `SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, SUM(amount) as total
+     FROM transactions
+     WHERE type = 'purchase' AND status = 'completed'
+       AND created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)
+     GROUP BY DATE_FORMAT(created_at, '%Y-%m-%d')
+     ORDER BY date ASC`
+  );
 
   const stats: AdminStats = {
     totalRevenue: Number(revenueRows[0].total) || 0,
@@ -41,6 +49,10 @@ export default async function AdminPage() {
     totalOrders: Number(orderCountRows[0].total) || 0,
     monthlyRevenue: monthlyRevenueRows.map(r => ({
       month: r.month,
+      total: Number(r.total) || 0,
+    })),
+    dailyRevenue: dailyRevenueRows.map(r => ({
+      date: r.date,
       total: Number(r.total) || 0,
     })),
   };

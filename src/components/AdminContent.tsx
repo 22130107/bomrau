@@ -2,6 +2,9 @@
 
 import React, { useState, useRef, useTransition, useEffect, useMemo } from "react";
 import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart
+} from "recharts";
+import {
   createCategoryAction,
   updateCategoryAction,
   deleteCategoryAction,
@@ -97,12 +100,18 @@ export interface MonthlyRevenue {
   total: number;
 }
 
+export interface DailyRevenue {
+  date: string;
+  total: number;
+}
+
 export interface AdminStats {
   totalRevenue: number;
   totalUnsoldAccounts: number;
   totalSoldAccounts: number;
   totalOrders: number;
   monthlyRevenue: MonthlyRevenue[];
+  dailyRevenue: DailyRevenue[];
 }
 
 export interface AdminProduct {
@@ -244,7 +253,9 @@ export function AdminContent({
 
   // States
   const [showRevenueChart, setShowRevenueChart] = useState(false);
-  const [selectedRevenueMonth, setSelectedRevenueMonth] = useState<string | null>(null);
+  const [revenueRange, setRevenueRange] = useState<'7d' | '30d' | '3m' | '6m' | '12m' | 'all' | 'custom'>('12m');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
 
   // States cho Sản phẩm
   const [showAddProduct, setShowAddProduct] = useState(false);
@@ -599,57 +610,145 @@ export function AdminContent({
           </div>
           </div>
 
-          {showRevenueChart && (
-            <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-[rgb(251,191,36)] font-bold text-[16px]">
-                  Doanh thu theo tháng
-                </h4>
-                <button
-                  onClick={() => setSelectedRevenueMonth(null)}
-                  className={`px-2 py-1 text-[11px] rounded transition-colors ${
-                    selectedRevenueMonth
-                      ? "bg-[rgb(59,130,246)] text-white"
-                      : "text-[rgba(238,238,238,0.4)]"
-                  }`}
-                >
-                  {selectedRevenueMonth ? "Tất cả" : "12 tháng"}
-                </button>
-              </div>
+          {showRevenueChart && (() => {
+            const rangeLabels: Record<string, string> = {
+              '7d': '7 ngày', '30d': '30 ngày', '3m': '3 tháng',
+              '6m': '6 tháng', '12m': '12 tháng', 'all': 'Tất cả', 'custom': 'Tuỳ chọn'
+            };
+            const ranges: Array<'7d' | '30d' | '3m' | '6m' | '12m' | 'all' | 'custom'> = ['7d', '30d', '3m', '6m', '12m', 'all', 'custom'];
 
-              <div className="flex flex-col gap-2">
-                {stats.monthlyRevenue.length === 0 && (
-                  <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-4">
+            let chartData: { label: string; value: number }[] = [];
+            const now = new Date();
+
+            if (revenueRange === 'custom') {
+              const from = customDateFrom ? new Date(customDateFrom) : null;
+              const to = customDateTo ? new Date(customDateTo + 'T23:59:59') : null;
+              const filtered = stats.dailyRevenue.filter(d => {
+                const date = new Date(d.date);
+                if (from && date < from) return false;
+                if (to && date > to) return false;
+                return true;
+              });
+              chartData = filtered.map(d => ({
+                label: new Date(d.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+                value: d.total,
+              }));
+            } else if (revenueRange === '7d' || revenueRange === '30d') {
+              const days = revenueRange === '7d' ? 7 : 30;
+              const cutoff = new Date(now);
+              cutoff.setDate(cutoff.getDate() - days);
+              const filtered = stats.dailyRevenue.filter(d => new Date(d.date) >= cutoff);
+              chartData = filtered.map(d => ({
+                label: new Date(d.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+                value: d.total,
+              }));
+            } else {
+              const months = revenueRange === '3m' ? 3 : revenueRange === '6m' ? 6 : revenueRange === '12m' ? 12 : 999;
+              const cutoff = months < 999 ? new Date(now.getFullYear(), now.getMonth() - months, 1) : new Date(0);
+              const filtered = stats.monthlyRevenue.filter(m => new Date(m.month + "-01") >= cutoff);
+              chartData = filtered.map(m => ({
+                label: new Date(m.month + "-01").toLocaleDateString("vi-VN", { month: "short", year: "numeric" }),
+                value: m.total,
+              }));
+            }
+
+            const hasData = chartData.length > 0;
+
+            return (
+              <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6">
+                <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                  <h4 className="text-[rgb(251,191,36)] font-bold text-[16px]">
+                    Biểu đồ doanh thu
+                  </h4>
+                  <div className="flex gap-1 flex-wrap">
+                    {ranges.map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setRevenueRange(r)}
+                        className={`px-2 py-1 text-[11px] rounded transition-colors ${
+                          revenueRange === r
+                            ? "bg-[rgb(251,191,36)] text-[rgb(2,6,23)] font-bold"
+                            : "bg-[rgba(251,191,36,0.1)] text-[rgba(238,238,238,0.7)] hover:bg-[rgba(251,191,36,0.2)]"
+                        }`}
+                      >
+                        {rangeLabels[r]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {revenueRange === 'custom' && (
+                  <div className="flex gap-2 mb-4 flex-wrap">
+                    <input
+                      type="date"
+                      value={customDateFrom}
+                      onChange={e => setCustomDateFrom(e.target.value)}
+                      className="bg-[rgb(17,24,39)] text-white text-[13px] px-2 py-1.5 rounded border border-[rgba(251,191,36,0.2)] focus:border-[rgb(251,191,36)] outline-none"
+                    />
+                    <span className="text-[rgba(238,238,238,0.4)] self-center">→</span>
+                    <input
+                      type="date"
+                      value={customDateTo}
+                      onChange={e => setCustomDateTo(e.target.value)}
+                      className="bg-[rgb(17,24,39)] text-white text-[13px] px-2 py-1.5 rounded border border-[rgba(251,191,36,0.2)] focus:border-[rgb(251,191,36)] outline-none"
+                    />
+                  </div>
+                )}
+
+                {!hasData ? (
+                  <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-8">
                     Chưa có dữ liệu doanh thu.
                   </p>
+                ) : (
+                  <div className="w-full h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                        <XAxis
+                          dataKey="label"
+                          tick={{ fill: "rgba(238,238,238,0.5)", fontSize: 11 }}
+                          axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
+                          tickLine={false}
+                          interval="preserveStartEnd"
+                        />
+                        <YAxis
+                          tick={{ fill: "rgba(238,238,238,0.5)", fontSize: 11 }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(v: number) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}tr` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "rgb(2,6,23)",
+                            border: "1px solid rgba(251,191,36,0.3)",
+                            borderRadius: "8px",
+                            fontSize: "13px",
+                          }}
+                          labelStyle={{ color: "rgba(238,238,238,0.7)" }}
+                          formatter={(value: any) => `${Number(value).toLocaleString("vi-VN")}đ`}
+                        />
+                        <defs>
+                          <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="rgb(251,191,36)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="rgb(251,191,36)" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke="rgb(251,191,36)"
+                          strokeWidth={2}
+                          fill="url(#revGrad)"
+                          dot={false}
+                          activeDot={{ r: 4, fill: "rgb(251,191,36)", stroke: "rgb(2,6,23)", strokeWidth: 2 }}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 )}
-                {stats.monthlyRevenue
-                  .filter(m => !selectedRevenueMonth || m.month === selectedRevenueMonth)
-                  .map(m => {
-                    const isSelected = selectedRevenueMonth === m.month;
-                    const maxTotal = Math.max(...stats.monthlyRevenue.map(x => x.total), 1);
-                    const pct = (m.total / maxTotal) * 100;
-                    const label = new Date(m.month + "-01").toLocaleDateString("vi-VN", {
-                      month: "short",
-                      year: "numeric",
-                    });
-                    return (
-                      <button
-                        key={m.month}
-                        onClick={() => setSelectedRevenueMonth(isSelected ? null : m.month)}
-                        className={`flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-[rgba(251,191,36,0.05)] ${isSelected ? "bg-[rgba(251,191,36,0.1)] border border-[rgba(251,191,36,0.3)]" : ""}`}
-                      >
-                        <span className="text-[rgba(238,238,238,0.7)] text-[13px] w-[90px] shrink-0 text-left">{label}</span>
-                        <div className="flex-1 h-6 bg-[rgb(17,24,39)] rounded-full overflow-hidden">
-                          <div className="h-full bg-gradient-to-r from-[rgb(202,138,4)] to-[rgb(251,191,36)] rounded-full transition-all duration-500" style={{ width: `${Math.max(pct, 2)}%` }} />
-                        </div>
-                        <span className="text-[rgb(251,191,36)] text-[13px] font-bold w-[100px] shrink-0 text-right">{m.total.toLocaleString("vi-VN")}đ</span>
-                      </button>
-                    );
-                  })}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
