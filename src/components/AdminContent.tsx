@@ -73,9 +73,15 @@ import {
 } from "@/app/actions/admin-user";
 import {
   toggleCategorySpinAction,
-  getSpinCostAction,
   updateSpinCostAction,
 } from "@/app/actions/admin-spin";
+import {
+  getEventsAction,
+  createEventAction,
+  deleteEventAction,
+  distributeBonusAction,
+  AdminEvent,
+} from "@/app/actions/event";
 import { AutocompleteField } from "@/components/AutocompleteField";
 import {
   getAllProductOptions,
@@ -231,10 +237,17 @@ export function AdminContent({
     | "notifications"
     | "options"
     | "spin"
+    | "events"
   >("stats");
 
   // Trạng thái chung
   const [isPending, startTransition] = useTransition();
+
+  // States cho Sự kiện
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventBonus, setNewEventBonus] = useState(0);
+  const [newEventStart, setNewEventStart] = useState("");
+  const [newEventEnd, setNewEventEnd] = useState("");
 
   // States cho Product Options
   const [allOptions, setAllOptions] = useState<ProductOptionFull[]>([]);
@@ -245,9 +258,14 @@ export function AdminContent({
   >("pet_tim");
   const [optionName, setOptionName] = useState("");
 
+  const [events, setEvents] = useState<AdminEvent[]>([]);
+
   useEffect(() => {
     if (activeTab === "options") {
       getAllProductOptions().then(setAllOptions);
+    }
+    if (activeTab === "events") {
+      getEventsAction().then(setEvents);
     }
   }, [activeTab]);
 
@@ -548,6 +566,7 @@ export function AdminContent({
     { key: "notifications", label: "Thông báo" },
     { key: "spin", label: "Quay Random" },
     { key: "options", label: "Pet/San/Chuong" },
+    { key: "events", label: "Sự kiện" },
   ] as const;
 
   return (
@@ -3750,6 +3769,169 @@ export function AdminContent({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Events */}
+      {activeTab === "events" && (
+        <div className="flex flex-col gap-4">
+          <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">
+                Quản lý Sự kiện
+              </h3>
+            </div>
+
+            {/* Add Event Form */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mb-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Tên sự kiện *</label>
+                <input
+                  type="text"
+                  value={newEventName}
+                  onChange={e => setNewEventName(e.target.value)}
+                  placeholder="VD: Khuyến mãi tháng 6"
+                  className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Tiền thưởng (VNĐ) *</label>
+                <input
+                  type="number"
+                  value={newEventBonus}
+                  onChange={e => setNewEventBonus(Number(e.target.value))}
+                  placeholder="10000"
+                  className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Từ ngày *</label>
+                <input
+                  type="datetime-local"
+                  value={newEventStart}
+                  onChange={e => setNewEventStart(e.target.value)}
+                  className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] text-[rgba(238,238,238,0.6)]">Đến ngày *</label>
+                <input
+                  type="datetime-local"
+                  value={newEventEnd}
+                  onChange={e => setNewEventEnd(e.target.value)}
+                  className="px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[14px] outline-none focus:border-[rgb(251,191,36)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1 justify-end">
+                <button
+                  disabled={isPending || !newEventName || !newEventBonus || !newEventStart || !newEventEnd}
+                  onClick={() => {
+                    startTransition(async () => {
+                      const res = await createEventAction({
+                        name: newEventName,
+                        bonus_amount: newEventBonus,
+                        start_date: newEventStart,
+                        end_date: newEventEnd,
+                      });
+                      if (res.error) alert(res.error);
+                      else {
+                        setNewEventName("");
+                        setNewEventBonus(0);
+                        setNewEventStart("");
+                        setNewEventEnd("");
+                        setEvents(await getEventsAction());
+                      }
+                    });
+                  }}
+                  className="px-4 py-2 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black font-bold text-[14px] rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isPending ? "Đang tạo..." : "+ Tạo sự kiện"}
+                </button>
+              </div>
+            </div>
+
+            {/* Events Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-[13px]">
+                <thead>
+                  <tr className="border-b border-[rgb(75,85,99)] text-[rgba(238,238,238,0.5)] text-[12px]">
+                    <th className="py-2 pr-2">Tên sự kiện</th>
+                    <th className="py-2 pr-2">Tiền thưởng</th>
+                    <th className="py-2 pr-2">Từ ngày</th>
+                    <th className="py-2 pr-2">Đến ngày</th>
+                    <th className="py-2 pr-2">Trạng thái</th>
+                    <th className="py-2 pr-2">Phát thưởng</th>
+                    <th className="py-2 pr-2"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {events.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="pt-4 text-center text-[rgba(238,238,238,0.4)] italic">
+                        Chưa có sự kiện nào.
+                      </td>
+                    </tr>
+                  )}
+                  {events.map(e => (
+                    <tr key={e.id} className="border-b border-[rgba(75,85,99,0.3)]">
+                      <td className="py-3 pr-2 text-white font-medium">{e.name}</td>
+                      <td className="py-3 pr-2 text-[rgb(251,191,36)] font-bold">
+                        {e.bonus_amount.toLocaleString("vi-VN")}đ
+                      </td>
+                      <td className="py-3 pr-2 text-[rgba(238,238,238,0.7)]">{e.start_date.replace("T", " ")}</td>
+                      <td className="py-3 pr-2 text-[rgba(238,238,238,0.7)]">{e.end_date.replace("T", " ")}</td>
+                      <td className="py-3 pr-2">
+                        <span className={`text-[12px] px-2 py-0.5 rounded ${e.is_distributed ? "bg-[rgb(34,197,94)]/20 text-[rgb(34,197,94)]" : "bg-[rgb(251,191,36)]/20 text-[rgb(251,191,36)]"}`}>
+                          {e.is_distributed ? "Đã phát" : "Chưa phát"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-2">
+                        <button
+                          disabled={isPending || e.is_distributed}
+                          onClick={() => {
+                            if (confirm(`Xác nhận phát thưởng ${e.bonus_amount.toLocaleString("vi-VN")}đ cho tất cả tài khoản Gmail đăng ký trong thời gian sự kiện "${e.name}"?`)) {
+                              startTransition(async () => {
+                                const res = await distributeBonusAction(e.id);
+                                if (res.error) alert(res.error);
+                                else {
+                                  alert(`Đã phát thưởng thành công!\nSố tài khoản: ${res.count}\nTổng tiền: ${(res.total || 0).toLocaleString("vi-VN")}đ`);
+                                  setEvents(await getEventsAction());
+                                }
+                              });
+                            }
+                          }}
+                          className={`px-3 py-1 text-[12px] rounded font-bold transition-colors disabled:opacity-40 ${
+                            e.is_distributed
+                              ? "bg-[rgb(75,85,99)] text-[rgba(238,238,238,0.4)] cursor-not-allowed"
+                              : "bg-[rgb(34,197,94)] hover:bg-[rgb(34,197,94)]/80 text-white"
+                          }`}
+                        >
+                          {isPending ? "..." : e.is_distributed ? "Đã phát" : "Phát thưởng"}
+                        </button>
+                      </td>
+                      <td className="py-3 pr-2">
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            if (confirm(`Xóa sự kiện "${e.name}"?`)) {
+                              startTransition(async () => {
+                                const res = await deleteEventAction(e.id);
+                                if (res.error) alert(res.error);
+                                else setEvents(await getEventsAction());
+                              });
+                            }
+                          }}
+                          className="text-[rgb(220,38,38)] hover:text-[rgb(248,113,113)] text-[14px] disabled:opacity-50"
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
     </div>
