@@ -676,9 +676,16 @@ export function AdminContent({
             return (
               <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-4 md:p-6">
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                  <h4 className="text-[rgb(251,191,36)] font-bold text-[16px]">
-                    Biểu đồ doanh thu
-                  </h4>
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-[rgb(251,191,36)] font-bold text-[16px]">
+                      Biểu đồ doanh thu
+                    </h4>
+                    {hasData && (
+                      <span className="text-[13px] text-[rgba(238,238,238,0.6)]">
+                        Tổng: <strong className="text-[rgb(251,191,36)]">{chartData.reduce((s, d) => s + d.value, 0).toLocaleString("vi-VN")}đ</strong>
+                      </span>
+                    )}
+                  </div>
                   <div className="flex gap-1 flex-wrap">
                     {ranges.map(r => (
                       <button
