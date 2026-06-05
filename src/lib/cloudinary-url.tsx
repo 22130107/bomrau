@@ -10,5 +10,6 @@ export function cloudinaryUrl(url: string): string {
 }
 
 export function CldImage({ loading = "eager", ...props }: ImageProps) {
+  if (!props.src || props.src === "") return null;
   return <Image {...props} loading={loading} unoptimized />;
 }

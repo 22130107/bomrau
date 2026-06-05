@@ -59,7 +59,7 @@ export default async function AdminPage() {
 
   // Fetch Spin Categories
   const [spinCategoryRows] = await pool.query<RowDataPacket[]>(`
-    SELECT c.id, c.name, c.is_spin_enabled,
+    SELECT c.id, c.name, c.is_spin_enabled, c.spin_price,
            (SELECT COUNT(*) FROM accounts a
             JOIN products p ON a.product_id = p.id
             WHERE (p.category_id = c.id OR JSON_CONTAINS(p.extra_categories, CAST(c.id AS JSON)))
@@ -72,6 +72,7 @@ export default async function AdminPage() {
     id: row.id,
     name: row.name,
     is_spin_enabled: Boolean(row.is_spin_enabled),
+    spin_price: row.spin_price != null ? Number(row.spin_price) : null,
     available_accounts: Number(row.available_accounts) || 0,
   }));
 

@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { NewsSection } from "@/components/NewsSection";
 import { CategorySection } from "@/components/CategorySection";
+import { TuiMuSection } from "@/components/TuiMuSection";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 
@@ -54,6 +55,7 @@ export default async function HomePage() {
       <Header />
       <main>
         <NewsSection notifications={initialNotifications} />
+        <TuiMuSection />
         <CategorySection />
       </main>
       <Footer />

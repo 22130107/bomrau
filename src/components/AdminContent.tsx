@@ -74,6 +74,7 @@ import {
 import {
   toggleCategorySpinAction,
   updateSpinCostAction,
+  updateCategorySpinPriceAction,
 } from "@/app/actions/admin-spin";
 import {
   getEventsAction,
@@ -199,6 +200,7 @@ export interface AdminSpinCategory {
   name: string;
   is_spin_enabled: boolean;
   available_accounts: number;
+  spin_price: number | null;
 }
 
 export interface AdminContentProps {
@@ -3521,7 +3523,7 @@ export function AdminContent({
             </h3>
           </div>
           <p className="text-[rgba(238,238,238,0.5)] text-[13px] mb-4">
-            Bật/Tắt danh mục được phép quay random. Hệ thống sẽ chọn random 1 account <strong className="text-[rgb(34,197,94)]">còn hàng</strong> từ các danh mục được bật.
+            Bật/Tắt danh mục được phép quay random và hiển thị ở khu vực <strong className="text-[rgb(251,191,36)]">Túi Mù</strong> trên trang chủ. Hệ thống sẽ chọn random 1 account <strong className="text-[rgb(34,197,94)]">còn hàng</strong> từ các danh mục được bật.
           </p>
           <div className="flex items-center gap-3 mb-4 p-3 bg-[rgb(17,24,39)] rounded-lg border border-[rgb(75,85,99)]">
             <span className="text-[rgba(238,238,238,0.7)] text-[13px] whitespace-nowrap">Chi phí mỗi lượt quay:</span>
@@ -3566,13 +3568,14 @@ export function AdminContent({
                 <tr className="border-b border-[rgb(75,85,99)]">
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Danh mục</th>
                   <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Acc còn trong kho</th>
-                  <th className="text-center py-3 text-[rgba(238,238,238,0.6)]">Cho phép quay</th>
+                  <th className="text-center py-3 text-[rgba(238,238,238,0.6)]">Quay & Túi mù</th>
+                  <th className="text-center py-3 text-[rgba(238,238,238,0.6)]">Giá quay</th>
                 </tr>
               </thead>
               <tbody>
                 {spinCategories.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
+                    <td colSpan={4} className="py-8 text-center text-[rgba(238,238,238,0.5)]">
                       Chưa có danh mục nào.
                     </td>
                   </tr>
@@ -3613,6 +3616,24 @@ export function AdminContent({
                             }`}
                           />
                         </button>
+                      </td>
+                      <td className="py-3 text-center">
+                        {cat.is_spin_enabled ? (
+                          <SpinPriceInput
+                            categoryId={cat.id}
+                            initialPrice={cat.spin_price}
+                            globalCost={spinCost}
+                            isPending={isPending}
+                            startTransition={startTransition}
+                            onPriceSaved={(newPrice) => {
+                              setSpinCategories(prev =>
+                                prev.map(c => c.id === cat.id ? { ...c, spin_price: newPrice } : c)
+                              );
+                            }}
+                          />
+                        ) : (
+                          <span className="text-[rgba(238,238,238,0.3)] text-[11px]">—</span>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -3941,6 +3962,55 @@ export function AdminContent({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function SpinPriceInput({ categoryId, initialPrice, globalCost, isPending, startTransition, onPriceSaved }: {
+  categoryId: number;
+  initialPrice: number | null;
+  globalCost: number;
+  isPending: boolean;
+  startTransition: React.TransitionStartFunction;
+  onPriceSaved: (newPrice: number | null) => void;
+}) {
+  const [price, setPrice] = useState(initialPrice != null && !isNaN(initialPrice) ? String(initialPrice) : "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setPrice(initialPrice != null && !isNaN(initialPrice) ? String(initialPrice) : "");
+  }, [initialPrice]);
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <input
+        type="number"
+        value={price}
+        onChange={(e) => setPrice(e.target.value)}
+        placeholder={`${globalCost.toLocaleString("vi-VN")}đ`}
+        min={1000}
+        max={1000000}
+        step={1000}
+        className="w-20 px-1.5 py-1 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded text-white text-[11px] outline-none focus:border-[rgb(251,191,36)] text-center"
+      />
+      <button
+        disabled={isPending || saving}
+        onClick={() => {
+          const val = price === "" ? null : parseInt(price, 10);
+          if (val !== null && (isNaN(val) || val < 1000)) return;
+          if (val !== null && val > 1000000) return;
+          setSaving(true);
+          startTransition(async () => {
+            const res = await updateCategorySpinPriceAction(categoryId, val);
+            setSaving(false);
+            if (res.error) alert(res.error);
+            else onPriceSaved(val);
+          });
+        }}
+        className="px-1.5 py-1 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] text-black text-[10px] font-bold rounded transition-colors disabled:opacity-50"
+      >
+        Lưu
+      </button>
     </div>
   );
 }

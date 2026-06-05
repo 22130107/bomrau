@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { spinAction } from "@/app/actions/random-spin";
+import { spinAction, spinCategoryAction } from "@/app/actions/random-spin";
 import { getBalanceAction } from "@/app/actions/auth";
 import { CldImage, cloudinaryUrl } from "@/lib/cloudinary-url";
 
@@ -24,9 +24,10 @@ interface RandomSpinProps {
   balance: number;
   spinProducts: SpinProduct[];
   spinCost?: number;
+  spinCategoryId?: number | null;
 }
 
-export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost = 10000 }: RandomSpinProps) {
+export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost = 10000, spinCategoryId }: RandomSpinProps) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "result" | "error">("idle");
   const [result, setResult] = useState<{
     category: { name: string; slug: string; image_url: string };
@@ -110,7 +111,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
   };
 
   const doSpin = async () => {
-    const res = await spinAction();
+    const res = spinCategoryId ? await spinCategoryAction(spinCategoryId) : await spinAction();
 
     if (res.error) {
       setError(res.error);
@@ -119,6 +120,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
       return;
     }
 
+    setDisplayBalance(prev => prev - spinCost);
     setResult(res as any);
     setPhase("result");
     setProgress(100);

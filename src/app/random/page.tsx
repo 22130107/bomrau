@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   description: "Quay random nhận tài khoản game TFT ngẫu nhiên từ các danh mục tại BomRauTFT",
 };
 
-export default async function RandomPage() {
+export default async function RandomPage(props: { searchParams?: Promise<{ category?: string }> }) {
+  const searchParams = await props.searchParams;
+  const categorySlug = searchParams?.category || null;
+
   const session = await getSession();
   let balance = 0;
 
@@ -27,28 +30,66 @@ export default async function RandomPage() {
     }
   }
 
-  const [spinProductRows] = await pool.query<RowDataPacket[]>(`
-    SELECT p.id, p.title, p.image_url, p.price, p.original_price, p.discount_percent,
-           c.name as category_name, c.slug as category_slug,
-           (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as available_accounts
-    FROM products p
-    JOIN categories c ON p.category_id = c.id
-    WHERE p.status = 'available'
-      AND (
-        c.is_spin_enabled = 1
-        OR EXISTS (
-          SELECT 1 FROM categories ec
-          WHERE ec.is_spin_enabled = 1
-            AND JSON_CONTAINS(p.extra_categories, CAST(ec.id AS JSON))
-        )
-      )
-    ORDER BY p.is_pinned DESC, p.id DESC
-  `);
+  let spinCost = 10000;
+  let categoryName = "Quay Random";
+  let spinCategoryId: number | null = null;
 
-  const [spinCostRows] = await pool.query<RowDataPacket[]>(
-    "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
-  );
-  const spinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 10000;
+  if (categorySlug) {
+    const [catRows] = await pool.query<RowDataPacket[]>(
+      "SELECT id, name, spin_price FROM categories WHERE slug = ? AND is_spin_enabled = 1",
+      [categorySlug]
+    );
+    if (catRows.length > 0) {
+      spinCategoryId = catRows[0].id;
+      categoryName = catRows[0].name;
+      spinCost = catRows[0].spin_price !== null ? Number(catRows[0].spin_price) : spinCost;
+    }
+  }
+
+  if (!categorySlug) {
+    const [spinCostRows] = await pool.query<RowDataPacket[]>(
+      "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
+    );
+    spinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 10000;
+  }
+
+  let spinProductRows: RowDataPacket[];
+  if (categorySlug) {
+    const [catRows] = await pool.query<RowDataPacket[]>(
+      "SELECT id FROM categories WHERE slug = ?",
+      [categorySlug]
+    );
+    const categoryId = catRows.length > 0 ? catRows[0].id : 0;
+
+    [spinProductRows] = await pool.query<RowDataPacket[]>(`
+      SELECT p.id, p.title, p.image_url, p.price, p.original_price, p.discount_percent,
+             c.name as category_name, c.slug as category_slug,
+             (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as available_accounts
+      FROM products p
+      JOIN categories c ON p.category_id = c.id
+      WHERE p.status = 'available'
+        AND (p.category_id = ? OR JSON_CONTAINS(p.extra_categories, CAST(? AS JSON)))
+      ORDER BY p.is_pinned DESC, p.id DESC
+    `, [categoryId, categoryId]);
+  } else {
+    [spinProductRows] = await pool.query<RowDataPacket[]>(`
+      SELECT p.id, p.title, p.image_url, p.price, p.original_price, p.discount_percent,
+             c.name as category_name, c.slug as category_slug,
+             (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as available_accounts
+      FROM products p
+      JOIN categories c ON p.category_id = c.id
+      WHERE p.status = 'available'
+        AND (
+          c.is_spin_enabled = 1
+          OR EXISTS (
+            SELECT 1 FROM categories ec
+            WHERE ec.is_spin_enabled = 1
+              AND JSON_CONTAINS(p.extra_categories, CAST(ec.id AS JSON))
+          )
+        )
+      ORDER BY p.is_pinned DESC, p.id DESC
+    `);
+  }
 
   const spinProducts: SpinProduct[] = spinProductRows
     .filter(row => Number(row.available_accounts) > 0)
@@ -70,15 +111,15 @@ export default async function RandomPage() {
       <main>
         <Breadcrumb items={[
           { label: "Trang chu", href: "/", icon: "home" },
-          { label: "Quay Random" },
+          { label: categoryName },
         ]} />
         <section className="py-6 md:py-10 animate-fade-in-up">
           <div className="mx-auto w-full max-w-[1200px] px-[14px] flex flex-col items-center">
             <h1 className="font-bold mb-2 border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px] self-start">
-              Quay Random Nhận Acc
+              {categoryName}
             </h1>
             <p className="text-[rgba(238,238,238,0.6)] text-[14px] md:text-[16px] mb-6 md:mb-8 self-start pl-4 md:pl-6">
-              Chi phí {spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.
+              {categorySlug ? `Chi phí ${spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.` : `Chi phí ${spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.`}
             </p>
             <RandomSpin
               isLoggedIn={!!session}
@@ -86,6 +127,7 @@ export default async function RandomPage() {
               balance={balance}
               spinProducts={spinProducts}
               spinCost={spinCost}
+              spinCategoryId={spinCategoryId}
             />
 
             {spinProducts.length > 0 && (

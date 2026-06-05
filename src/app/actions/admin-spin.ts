@@ -36,6 +36,33 @@ export async function getSpinCostAction() {
   }
 }
 
+export async function updateCategorySpinPriceAction(categoryId: number, price: number | null) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") return { error: "Unauthorized" };
+
+    if (price !== null) {
+      const validPrice = Math.max(1000, Math.min(1000000, Math.round(price)));
+      await pool.query(
+        "UPDATE categories SET spin_price = ? WHERE id = ?",
+        [validPrice, categoryId]
+      );
+    } else {
+      await pool.query(
+        "UPDATE categories SET spin_price = NULL WHERE id = ?",
+        [categoryId]
+      );
+    }
+
+    revalidatePath("/admin");
+    revalidatePath("/random");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Update category spin price error:", error);
+    return { error: "Loi he thong" };
+  }
+}
+
 export async function updateSpinCostAction(cost: number) {
   try {
     const session = await getSession();

@@ -69,8 +69,8 @@ CREATE TABLE `categories` (
   `fake_remaining_count` int NOT NULL DEFAULT '0',
   `fake_sold_count` int NOT NULL DEFAULT '0',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
-  `is_spin_enabled` tinyint(1) NOT NULL DEFAULT '0',
-  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `is_spin_enabled`            tinyint(1) NOT NULL DEFAULT '0',
+  `created_at`           timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `slug` (`slug`) USING BTREE
