@@ -9,6 +9,7 @@ export async function CategorySection() {
            c.fake_remaining_count as remaining,
            c.fake_sold_count as sold
     FROM categories c
+    WHERE c.is_spin_enabled = 0
     ORDER BY c.sort_order ASC
   `);
 
