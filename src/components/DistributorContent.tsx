@@ -10,6 +10,7 @@ export function DistributorContent() {
   const [error, setError] = useState<string | null>(null);
   const [distributorName, setDistributorName] = useState("");
   const [domain, setDomain] = useState("");
+  const [adminFeePercent, setAdminFeePercent] = useState(0);
   const [soldAccounts, setSoldAccounts] = useState<SoldAccount[]>([]);
   const [buyers, setBuyers] = useState<BuyerInfo[]>([]);
   const [isPending, setIsPending] = useState(false);
@@ -17,6 +18,7 @@ export function DistributorContent() {
   const [monthlyRevenue, setMonthlyRevenue] = useState<MonthlyRevenue[]>([]);
   const [revenueRange, setRevenueRange] = useState<"7d" | "30d" | "3m" | "6m" | "12m" | "all">("30d");
   const [selectedBuyer, setSelectedBuyer] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -27,6 +29,7 @@ export function DistributorContent() {
         } else {
           setDistributorName(res.distributorName || "");
           setDomain(res.domain || "");
+          setAdminFeePercent(res.adminFeePercent || 0);
           setSoldAccounts(res.soldAccounts || []);
           setBuyers(res.buyers || []);
           setDailyRevenue(res.dailyRevenue || []);
@@ -93,14 +96,24 @@ export function DistributorContent() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-3 md:p-5 text-center">
-          <p className="text-[rgba(238,238,238,0.6)] text-[11px] md:text-[13px]">Tổng doanh thu</p>
-          <p className="text-[rgb(251,191,36)] text-[16px] md:text-[22px] font-bold mt-1">{totalRevenue.toLocaleString("vi-VN")}đ</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-6">
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-2 md:p-5 text-center">
+          <p className="text-[rgba(238,238,238,0.6)] text-[10px] md:text-[13px]">Tổng doanh thu</p>
+          <p className="text-[rgb(251,191,36)] text-[13px] md:text-[22px] font-bold mt-0.5 md:mt-1">{totalRevenue.toLocaleString("vi-VN")}đ</p>
         </div>
-        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-3 md:p-5 text-center">
-          <p className="text-[rgba(238,238,238,0.6)] text-[11px] md:text-[13px]">Đã bán</p>
-          <p className="text-[rgb(34,197,94)] text-[16px] md:text-[22px] font-bold mt-1">{soldAccounts.length} acc</p>
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(251,191,36)] rounded-xl p-2 md:p-5 text-center">
+          <p className="text-[rgba(238,238,238,0.6)] text-[10px] md:text-[13px]">Giá nhập ({adminFeePercent}%)</p>
+          <p className="text-[rgb(251,191,36)] text-[13px] md:text-[22px] font-bold mt-0.5 md:mt-1">{Math.round(totalRevenue * adminFeePercent / 100).toLocaleString("vi-VN")}đ</p>
+        </div>
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(34,197,94)] rounded-xl p-2 md:p-5 text-center">
+          <p className="text-[rgba(238,238,238,0.6)] text-[10px] md:text-[13px]">Lợi nhuận</p>
+          <p className="text-[rgb(34,197,94)] text-[13px] md:text-[22px] font-bold mt-0.5 md:mt-1">
+            {Math.round(totalRevenue * (100 - adminFeePercent) / 100).toLocaleString("vi-VN")}đ
+          </p>
+        </div>
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-xl p-2 md:p-5 text-center">
+          <p className="text-[rgba(238,238,238,0.6)] text-[10px] md:text-[13px]">Đã bán</p>
+          <p className="text-[rgb(34,197,94)] text-[13px] md:text-[22px] font-bold mt-0.5 md:mt-1">{soldAccounts.length} acc</p>
         </div>
       </div>
 
@@ -228,7 +241,23 @@ export function DistributorContent() {
                 Chưa có tài khoản nào được bán qua tên miền của bạn.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div>
+                <div className="relative mb-4">
+                  <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[rgba(238,238,238,0.4)] text-[13px]" />
+                  <input
+                    type="text"
+                    placeholder="Tìm theo tên sản phẩm..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full bg-[rgb(17,24,39)] text-white text-[13px] pl-9 pr-3 py-2 rounded-lg border border-[rgba(251,191,36,0.2)] focus:border-[rgb(251,191,36)] outline-none transition-colors"
+                  />
+                </div>
+                <div className="overflow-x-auto">
+                  {(() => {
+                    const filtered = searchTerm
+                      ? soldAccounts.filter(a => a.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                      : soldAccounts;
+                    return (
                 <table className="w-full text-[12px] md:text-[14px]">
                   <thead><tr className="border-b border-[rgb(75,85,99)]">
                     <th className="text-left py-3 text-[rgba(238,238,238,0.6)]">Mã đơn</th>
@@ -238,7 +267,7 @@ export function DistributorContent() {
                     <th className="text-left py-3 text-[rgba(238,238,238,0.6)] hidden md:table-cell">Ngày mua</th>
                   </tr></thead>
                   <tbody>
-                    {soldAccounts.map(acc => (
+                    {filtered.map(acc => (
                       <tr key={acc.id} className="border-b border-[rgb(55,65,81)]">
                         <td className="py-3 text-white">#{acc.id}</td>
                         <td className="py-3 text-[rgb(251,191,36)] font-semibold">{acc.name}</td>
@@ -248,16 +277,19 @@ export function DistributorContent() {
                       </tr>
                     ))}
                   </tbody>
-                  <tfoot><tr className="border-t-2 border-[rgb(251,191,36)]">
+                  {!searchTerm && <tfoot><tr className="border-t-2 border-[rgb(251,191,36)]">
                     <td colSpan={3} className="py-3 text-white font-bold text-right">Tổng:</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-bold">{totalRevenue.toLocaleString("vi-VN")}đ</td>
                     <td className="hidden md:table-cell"></td>
-                  </tr></tfoot>
+                  </tr></tfoot>}
                 </table>
+                    );
+                  })()}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
         {activeTab === "buyers" && (
           <div>

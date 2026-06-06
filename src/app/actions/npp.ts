@@ -34,6 +34,7 @@ export interface NppDataResponse {
   error?: string;
   distributorName?: string;
   domain?: string;
+  adminFeePercent?: number;
   soldAccounts?: SoldAccount[];
   buyers?: BuyerInfo[];
   dailyRevenue?: DailyRevenue[];
@@ -51,7 +52,7 @@ export async function getNppDataAction(): Promise<NppDataResponse> {
 
     // 1. Lấy thông tin distributor của user hiện tại
     const [distributors] = await pool.query<RowDataPacket[]>(
-      "SELECT id, name, domain FROM distributors WHERE user_id = ? AND is_active = 1 LIMIT 1",
+      "SELECT id, name, domain, admin_fee_percent FROM distributors WHERE user_id = ? AND is_active = 1 LIMIT 1",
       [userId]
     );
 
@@ -144,6 +145,7 @@ export async function getNppDataAction(): Promise<NppDataResponse> {
       success: true,
       distributorName: distributor.name,
       domain: distributor.domain,
+      adminFeePercent: Number(distributor.admin_fee_percent) || 0,
       soldAccounts: soldAccountsList,
       buyers: buyersList,
       dailyRevenue: dailyRevenueList,
