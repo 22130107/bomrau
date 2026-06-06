@@ -34,7 +34,17 @@ function getOriginFromRequest(request: NextRequest): string {
   if (forwardedHost === "http" || forwardedHost === "https") {
     forwardedHost = null;
   }
-  const host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
+  let host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
+  
+  // Kiểm tra xem host có hợp lệ không (phải chứa dấu chấm '.' hoặc là localhost)
+  const isValidHost = host && (host.includes(".") || host.includes("localhost") || host.includes("127.0.0.1"));
+  
+  if (!isValidHost) {
+    // Nếu host không hợp lệ (ví dụ bị proxy gán thành "http"), dùng BASE_URL cấu hình sẵn hoặc fallback mặc định
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://bomrautft.com";
+    return baseUrl.replace(/\/$/, ""); // Loại bỏ slash cuối nếu có
+  }
+  
   // Bắt buộc sử dụng https trên môi trường thực tế để tránh lỗi proxy/Cloudflare Flexible SSL
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
   const proto = isLocalhost ? "http" : "https";
