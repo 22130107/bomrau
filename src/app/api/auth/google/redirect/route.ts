@@ -6,6 +6,22 @@ import crypto from "crypto";
  * để hỗ trợ nhiều tên miền (multi-domain).
  */
 function getOrigin(request: NextRequest): string {
+  // 1. Thử lấy từ header Referer (do trình duyệt gửi lên, không bị ảnh hưởng bởi lỗi proxy Nginx)
+  const referer = request.headers.get("referer");
+  if (referer) {
+    try {
+      const refererUrl = new URL(referer);
+      const host = refererUrl.host;
+      if (host && (host.includes(".") || host.includes("localhost") || host.includes("127.0.0.1"))) {
+        const proto = refererUrl.protocol.replace(":", "");
+        return `${proto}://${host}`;
+      }
+    } catch (e) {
+      // Bỏ qua nếu referer không hợp lệ
+    }
+  }
+
+  // 2. Dự phòng: Lấy từ headers thông thường
   let forwardedHost = request.headers.get("x-forwarded-host");
   // Nếu proxy cấu hình sai, x-forwarded-host có thể bị gán thành "http" hoặc "https"
   if (forwardedHost === "http" || forwardedHost === "https") {
