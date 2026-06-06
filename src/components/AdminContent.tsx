@@ -579,7 +579,8 @@ export function AdminContent({
   ] as const;
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto animate-fade-in-up">
+    <>
+      <div className="w-full max-w-[1200px] mx-auto animate-fade-in-up">
       <h1 className="text-[rgb(251,191,36)] text-[24px] md:text-[32px] font-bold mb-6">
         Quản lý Admin
       </h1>
@@ -2520,7 +2521,7 @@ export function AdminContent({
 
       {/* Distributors */}
       {activeTab === "distributors" && (
-        <><div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
+        <div className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-4 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">
               Nhà phân phối
@@ -2907,162 +2908,6 @@ export function AdminContent({
             </table>
           </div>
         </div>
-
-        {/* NPP Revenue Detail Modal */}
-        {showDistributorDetail && detailDistributor && (
-          <div
-            className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
-            onClick={() => setShowDistributorDetail(false)}
-          >
-            <div
-              className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl w-full max-w-[900px] max-h-[90vh] overflow-y-auto p-5 md:p-7"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">
-                    Doanh thu: {detailDistributor.name}
-                  </h3>
-                  <p className="text-[rgba(238,238,238,0.4)] text-[12px] mt-0.5">
-                    {detailDistributor.domain} · Phí admin: {detailDistributor.adminFeePercent}%
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDistributorDetail(false)}
-                  className="text-[rgba(238,238,238,0.5)] hover:text-white text-[22px] leading-none"
-                >
-                  <i className="fa-solid fa-xmark" />
-                </button>
-              </div>
-
-              {loadingDetail ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="relative w-10 h-10 flex items-center justify-center">
-                    <span className="absolute inset-0 rounded-full border-4 border-[rgb(251,191,36)]/20"></span>
-                    <span className="absolute inset-0 rounded-full border-4 border-t-[rgb(251,191,36)] animate-spin"></span>
-                  </div>
-                </div>
-              ) : distributorDetailData ? (
-                <>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-5">
-                    <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
-                      <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Tổng doanh thu</p>
-                      <p className="text-[rgb(251,191,36)] text-[15px] md:text-[18px] font-bold mt-1">{distributorDetailData.totalRevenue.toLocaleString("vi-VN")}đ</p>
-                    </div>
-                    <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
-                      <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Phí admin ({detailDistributor.adminFeePercent}%)</p>
-                      <p className="text-[rgb(251,191,36)] text-[15px] md:text-[18px] font-bold mt-1">
-                        {Math.round(distributorDetailData.totalRevenue * detailDistributor.adminFeePercent / 100).toLocaleString("vi-VN")}đ
-                      </p>
-                    </div>
-                    <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
-                      <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Lợi nhuận NPP</p>
-                      <p className="text-[rgb(34,197,94)] text-[15px] md:text-[18px] font-bold mt-1">
-                        {Math.round(distributorDetailData.totalRevenue * (100 - detailDistributor.adminFeePercent) / 100).toLocaleString("vi-VN")}đ
-                      </p>
-                    </div>
-                    <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
-                      <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Đơn hàng</p>
-                      <p className="text-[rgb(251,191,36)] text-[15px] md:text-[18px] font-bold mt-1">{distributorDetailData.totalOrders}</p>
-                    </div>
-                  </div>
-
-                  {(() => {
-                    const rangeLabels: Record<string, string> = {
-                      '7d': '7 ngày', '30d': '30 ngày', '3m': '3 tháng',
-                      '6m': '6 tháng', '12m': '12 tháng', 'all': 'Tất cả'
-                    };
-                    const ranges: Array<"7d" | "30d" | "3m" | "6m" | "12m" | "all"> =
-                      ['7d', '30d', '3m', '6m', '12m', 'all'];
-                    let chartData: { label: string; value: number }[] = [];
-                    const now = new Date();
-                    if (detailRevenueRange === '7d' || detailRevenueRange === '30d') {
-                      const days = detailRevenueRange === '7d' ? 7 : 30;
-                      const cutoff = new Date(now);
-                      cutoff.setDate(cutoff.getDate() - days);
-                      const filtered = distributorDetailData.dailyRevenue.filter(d => new Date(d.date) >= cutoff);
-                      chartData = filtered.map(d => ({
-                        label: new Date(d.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
-                        value: d.total,
-                      }));
-                    } else {
-                      const months = detailRevenueRange === '3m' ? 3 : detailRevenueRange === '6m' ? 6 : detailRevenueRange === '12m' ? 12 : 999;
-                      const cutoff = months < 999 ? new Date(now.getFullYear(), now.getMonth() - months, 1) : new Date(0);
-                      const filtered = distributorDetailData.monthlyRevenue.filter(m => new Date(m.month + "-01") >= cutoff);
-                      chartData = filtered.map(m => ({
-                        label: new Date(m.month + "-01").toLocaleDateString("vi-VN", { month: "short", year: "numeric" }),
-                        value: m.total,
-                      }));
-                    }
-                    return (
-                      <div className="bg-[rgb(17,24,39)] border border-[rgba(251,191,36,0.15)] rounded-xl p-4 mb-5">
-                        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                          <h4 className="text-[rgb(251,191,36)] font-bold text-[14px]">Biểu đồ doanh thu</h4>
-                          <div className="flex gap-1 flex-wrap">
-                            {ranges.map(r => (
-                              <button key={r} onClick={() => setDetailRevenueRange(r)}
-                                className={`px-2 py-1 text-[11px] rounded transition-colors ${detailRevenueRange === r ? "bg-[rgb(251,191,36)] text-[rgb(2,6,23)] font-bold" : "bg-[rgba(251,191,36,0.1)] text-[rgba(238,238,238,0.7)] hover:bg-[rgba(251,191,36,0.2)]"}`}
-                              >{rangeLabels[r]}</button>
-                            ))}
-                          </div>
-                        </div>
-                        {chartData.length === 0 ? (
-                          <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-6">Chưa có dữ liệu doanh thu.</p>
-                        ) : (
-                          <div className="w-full h-[250px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                                <XAxis dataKey="label" tick={{ fill: "rgba(238,238,238,0.5)", fontSize: 11 }} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} tickLine={false} interval="preserveStartEnd" />
-                                <YAxis tick={{ fill: "rgba(238,238,238,0.5)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}tr` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`} />
-                                <Tooltip contentStyle={{ backgroundColor: "rgb(2,6,23)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: "8px", fontSize: "13px" }} labelStyle={{ color: "rgba(238,238,238,0.7)" }} formatter={(value: any) => `${Number(value).toLocaleString("vi-VN")}đ`} />
-                                <defs><linearGradient id="nppAdminRevGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="rgb(251,191,36)" stopOpacity={0.3} /><stop offset="95%" stopColor="rgb(251,191,36)" stopOpacity={0} /></linearGradient></defs>
-                                <Area type="monotone" dataKey="value" stroke="rgb(251,191,36)" strokeWidth={2} fill="url(#nppAdminRevGrad)" dot={false} activeDot={{ r: 4, fill: "rgb(251,191,36)", stroke: "rgb(2,6,23)", strokeWidth: 2 }} />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  <div className="bg-[rgb(17,24,39)] border border-[rgba(251,191,36,0.15)] rounded-xl p-4">
-                    <h4 className="text-[rgb(251,191,36)] font-bold text-[14px] mb-3">Đơn hàng gần đây</h4>
-                    {distributorDetailData.recentOrders.length === 0 ? (
-                      <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-4">Chưa có đơn hàng nào.</p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-[12px] md:text-[13px]">
-                          <thead><tr className="border-b border-[rgb(75,85,99)]">
-                            <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Mã đơn</th>
-                            <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Sản phẩm</th>
-                            <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Người mua</th>
-                            <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Giá</th>
-                            <th className="text-left py-2 text-[rgba(238,238,238,0.5)] hidden md:table-cell">Ngày</th>
-                          </tr></thead>
-                          <tbody>
-                            {distributorDetailData.recentOrders.map(o => (
-                              <tr key={o.id} className="border-b border-[rgb(55,65,81)]">
-                                <td className="py-2 text-white">#{o.id}</td>
-                                <td className="py-2 text-[rgb(251,191,36)]">{o.product}</td>
-                                <td className="py-2 text-white">{o.buyer}</td>
-                                <td className="py-2 text-white">{o.amount.toLocaleString("vi-VN")}đ</td>
-                                <td className="py-2 text-white hidden md:table-cell">{o.date}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-8">Không thể tải dữ liệu.</p>
-              )}
-            </div>
-          </div>
-        )}
-      </>
       )}
 
       {/* Users */}
@@ -3072,146 +2917,7 @@ export function AdminContent({
             Người dùng
           </h3>
 
-          {/* User Detail Modal */}
-          {showUserDetail && selectedUserDetail && (
-            <div
-            className="fixed inset-0 bg-black/60 z-[3000] flex items-center justify-center p-4"
-              onClick={() => setShowUserDetail(false)}
-            >
-              <div
-                className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-[rgb(251,191,36)] text-[20px] font-bold">
-                    Chi tiết người dùng
-                  </h4>
-                  <button
-                    onClick={() => setShowUserDetail(false)}
-                    className="text-white hover:text-[rgb(251,191,36)] text-[20px]"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-[rgb(17,24,39)] rounded-lg">
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      ID:
-                    </span>
-                    <p className="text-white font-bold">
-                      #{selectedUserDetail.id}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      Username:
-                    </span>
-                    <p className="text-[rgb(251,191,36)] font-bold">
-                      {selectedUserDetail.username}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      Email:
-                    </span>
-                    <p className="text-white">
-                      {selectedUserDetail.email || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      Số dư:
-                    </span>
-                    <p className="text-[rgb(34,197,94)] font-bold">
-                      {selectedUserDetail.balance.toLocaleString("vi-VN")}đ
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      Vai trò:
-                    </span>
-                    <p className="text-white">{selectedUserDetail.role}</p>
-                  </div>
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      Ngày tham gia:
-                    </span>
-                    <p className="text-white">{selectedUserDetail.joinDate}</p>
-                  </div>
-                  <div>
-                    <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
-                      Trạng thái:
-                    </span>
-                    <p
-                      className={
-                        selectedUserDetail.is_active
-                          ? "text-[rgb(34,197,94)]"
-                          : "text-[rgb(220,38,38)]"
-                      }
-                    >
-                      {selectedUserDetail.is_active ? "Hoạt động" : "Đã khóa"}
-                    </p>
-                  </div>
-                </div>
-                <h5 className="text-[rgb(251,191,36)] font-bold text-[14px] mb-2">
-                  Lịch sử đơn hàng ({selectedUserOrders.length})
-                </h5>
-                {selectedUserOrders.length === 0 ? (
-                  <p className="text-[rgba(238,238,238,0.5)] italic text-[13px]">
-                    Chưa có đơn hàng nào.
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[12px]">
-                      <thead>
-                        <tr className="border-b border-[rgb(75,85,99)]">
-                          <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
-                            ID
-                          </th>
-                          <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
-                            Sản phẩm
-                          </th>
-                          <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
-                            Giá
-                          </th>
-                          <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
-                            Ngày
-                          </th>
-                          <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
-                            Trạng thái
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedUserOrders.map((o) => (
-                          <tr
-                            key={o.id}
-                            className="border-b border-[rgb(55,65,81)]"
-                          >
-                            <td className="py-2 text-white">#{o.id}</td>
-                            <td className="py-2 text-[rgb(251,191,36)]">
-                              {o.product}
-                            </td>
-                            <td className="py-2 text-white">
-                              {o.amount.toLocaleString("vi-VN")}đ
-                            </td>
-                            <td className="py-2 text-white">{o.date}</td>
-                            <td className="py-2">
-                              <span
-                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${o.status === "completed" ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : o.status === "pending" ? "bg-[rgba(251,191,36,0.2)] text-[rgb(251,191,36)]" : "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]"}`}
-                              >
-                                {o.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+
 
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
@@ -4145,7 +3851,304 @@ export function AdminContent({
           </div>
         </div>
       )}
-    </div>
+      </div>
+
+      {/* NPP Revenue Detail Modal */}
+      {showDistributorDetail && detailDistributor && (
+        <div
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowDistributorDetail(false)}
+        >
+          <div
+            className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl w-full max-w-[900px] max-h-[90vh] overflow-y-auto p-5 md:p-7"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h3 className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold">
+                  Doanh thu: {detailDistributor.name}
+                </h3>
+                <p className="text-[rgba(238,238,238,0.4)] text-[12px] mt-0.5">
+                  {detailDistributor.domain} · Phí admin: {detailDistributor.adminFeePercent}%
+                </p>
+              </div>
+              <button
+                onClick={() => setShowDistributorDetail(false)}
+                className="text-[rgba(238,238,238,0.5)] hover:text-white text-[22px] leading-none"
+              >
+                <i className="fa-solid fa-xmark" />
+              </button>
+            </div>
+
+            {loadingDetail ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="relative w-10 h-10 flex items-center justify-center">
+                  <span className="absolute inset-0 rounded-full border-4 border-[rgb(251,191,36)]/20"></span>
+                  <span className="absolute inset-0 rounded-full border-4 border-t-[rgb(251,191,36)] animate-spin"></span>
+                </div>
+              </div>
+            ) : distributorDetailData ? (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-5">
+                  <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
+                    <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Tổng doanh thu</p>
+                    <p className="text-[rgb(251,191,36)] text-[15px] md:text-[18px] font-bold mt-1">{distributorDetailData.totalRevenue.toLocaleString("vi-VN")}đ</p>
+                  </div>
+                  <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
+                    <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Phí admin ({detailDistributor.adminFeePercent}%)</p>
+                    <p className="text-[rgb(251,191,36)] text-[15px] md:text-[18px] font-bold mt-1">
+                      {Math.round(distributorDetailData.totalRevenue * detailDistributor.adminFeePercent / 100).toLocaleString("vi-VN")}đ
+                    </p>
+                  </div>
+                  <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
+                    <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Lợi nhuận NPP</p>
+                    <p className="text-[rgb(34,197,94)] text-[15px] md:text-[18px] font-bold mt-1">
+                      {Math.round(distributorDetailData.totalRevenue * (100 - detailDistributor.adminFeePercent) / 100).toLocaleString("vi-VN")}đ
+                    </p>
+                  </div>
+                  <div className="bg-[rgb(17,24,39)] rounded-xl p-3 text-center border border-[rgba(251,191,36,0.15)]">
+                    <p className="text-[rgba(238,238,238,0.5)] text-[11px]">Đơn hàng</p>
+                    <p className="text-[rgb(251,191,36)] text-[15px] md:text-[18px] font-bold mt-1">{distributorDetailData.totalOrders}</p>
+                  </div>
+                </div>
+
+                {(() => {
+                  const rangeLabels: Record<string, string> = {
+                    '7d': '7 ngày', '30d': '30 ngày', '3m': '3 tháng',
+                    '6m': '6 tháng', '12m': '12 tháng', 'all': 'Tất cả'
+                  };
+                  const ranges: Array<"7d" | "30d" | "3m" | "6m" | "12m" | "all"> =
+                    ['7d', '30d', '3m', '6m', '12m', 'all'];
+                  let chartData: { label: string; value: number }[] = [];
+                  const now = new Date();
+                  if (detailRevenueRange === '7d' || detailRevenueRange === '30d') {
+                    const days = detailRevenueRange === '7d' ? 7 : 30;
+                    const cutoff = new Date(now);
+                    cutoff.setDate(cutoff.getDate() - days);
+                    const filtered = distributorDetailData.dailyRevenue.filter(d => new Date(d.date) >= cutoff);
+                    chartData = filtered.map(d => ({
+                      label: new Date(d.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" }),
+                      value: d.total,
+                    }));
+                  } else {
+                    const months = detailRevenueRange === '3m' ? 3 : detailRevenueRange === '6m' ? 6 : detailRevenueRange === '12m' ? 12 : 999;
+                    const cutoff = months < 999 ? new Date(now.getFullYear(), now.getMonth() - months, 1) : new Date(0);
+                    const filtered = distributorDetailData.monthlyRevenue.filter(m => new Date(m.month + "-01") >= cutoff);
+                    chartData = filtered.map(m => ({
+                      label: new Date(m.month + "-01").toLocaleDateString("vi-VN", { month: "short", year: "numeric" }),
+                      value: m.total,
+                    }));
+                  }
+                  return (
+                    <div className="bg-[rgb(17,24,39)] border border-[rgba(251,191,36,0.15)] rounded-xl p-4 mb-5">
+                      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <h4 className="text-[rgb(251,191,36)] font-bold text-[14px]">Biểu đồ doanh thu</h4>
+                        <div className="flex gap-1 flex-wrap">
+                          {ranges.map(r => (
+                            <button key={r} onClick={() => setDetailRevenueRange(r)}
+                              className={`px-2 py-1 text-[11px] rounded transition-colors ${detailRevenueRange === r ? "bg-[rgb(251,191,36)] text-[rgb(2,6,23)] font-bold" : "bg-[rgba(251,191,36,0.1)] text-[rgba(238,238,238,0.7)] hover:bg-[rgba(251,191,36,0.2)]"}`}
+                            >{rangeLabels[r]}</button>
+                          ))}
+                        </div>
+                      </div>
+                      {chartData.length === 0 ? (
+                        <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-6">Chưa có dữ liệu doanh thu.</p>
+                      ) : (
+                        <div className="w-full h-[250px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                              <XAxis dataKey="label" tick={{ fill: "rgba(238,238,238,0.5)", fontSize: 11 }} axisLine={{ stroke: "rgba(255,255,255,0.1)" }} tickLine={false} interval="preserveStartEnd" />
+                              <YAxis tick={{ fill: "rgba(238,238,238,0.5)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}tr` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`} />
+                              <Tooltip contentStyle={{ backgroundColor: "rgb(2,6,23)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: "8px", fontSize: "13px" }} labelStyle={{ color: "rgba(238,238,238,0.7)" }} formatter={(value: any) => `${Number(value).toLocaleString("vi-VN")}đ`} />
+                              <defs><linearGradient id="nppAdminRevGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="rgb(251,191,36)" stopOpacity={0.3} /><stop offset="95%" stopColor="rgb(251,191,36)" stopOpacity={0} /></linearGradient></defs>
+                              <Area type="monotone" dataKey="value" stroke="rgb(251,191,36)" strokeWidth={2} fill="url(#nppAdminRevGrad)" dot={false} activeDot={{ r: 4, fill: "rgb(251,191,36)", stroke: "rgb(2,6,23)", strokeWidth: 2 }} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <div className="bg-[rgb(17,24,39)] border border-[rgba(251,191,36,0.15)] rounded-xl p-4">
+                  <h4 className="text-[rgb(251,191,36)] font-bold text-[14px] mb-3">Đơn hàng gần đây</h4>
+                  {distributorDetailData.recentOrders.length === 0 ? (
+                    <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-4">Chưa có đơn hàng nào.</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[12px] md:text-[13px]">
+                        <thead><tr className="border-b border-[rgb(75,85,99)]">
+                          <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Mã đơn</th>
+                          <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Sản phẩm</th>
+                          <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Người mua</th>
+                          <th className="text-left py-2 text-[rgba(238,238,238,0.5)]">Giá</th>
+                          <th className="text-left py-2 text-[rgba(238,238,238,0.5)] hidden md:table-cell">Ngày</th>
+                        </tr></thead>
+                        <tbody>
+                          {distributorDetailData.recentOrders.map(o => (
+                            <tr key={o.id} className="border-b border-[rgb(55,65,81)]">
+                              <td className="py-2 text-white">#{o.id}</td>
+                              <td className="py-2 text-[rgb(251,191,36)]">{o.product}</td>
+                              <td className="py-2 text-white">{o.buyer}</td>
+                              <td className="py-2 text-white">{o.amount.toLocaleString("vi-VN")}đ</td>
+                              <td className="py-2 text-white hidden md:table-cell">{o.date}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p className="text-[rgba(238,238,238,0.4)] text-[13px] italic text-center py-8">Không thể tải dữ liệu.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* User Detail Modal */}
+      {showUserDetail && selectedUserDetail && (
+        <div
+          className="fixed inset-0 bg-black/60 z-[3000] flex items-center justify-center p-4"
+          onClick={() => setShowUserDetail(false)}
+        >
+          <div
+            className="bg-[rgb(2,6,23)] border border-[rgb(253,230,138)] rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-[rgb(251,191,36)] text-[20px] font-bold">
+                Chi tiết người dùng
+              </h4>
+              <button
+                onClick={() => setShowUserDetail(false)}
+                className="text-white hover:text-[rgb(251,191,36)] text-[20px]"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-[rgb(17,24,39)] rounded-lg">
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  ID:
+                </span>
+                <p className="text-white font-bold">
+                  #{selectedUserDetail.id}
+                </p>
+              </div>
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  Username:
+                </span>
+                <p className="text-[rgb(251,191,36)] font-bold">
+                  {selectedUserDetail.username}
+                </p>
+              </div>
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  Email:
+                </span>
+                <p className="text-white">
+                  {selectedUserDetail.email || "N/A"}
+                </p>
+              </div>
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  Số dư:
+                </span>
+                <p className="text-[rgb(34,197,94)] font-bold">
+                  {selectedUserDetail.balance.toLocaleString("vi-VN")}đ
+                </p>
+              </div>
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  Vai trò:
+                </span>
+                <p className="text-white">{selectedUserDetail.role}</p>
+              </div>
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  Ngày tham gia:
+                </span>
+                <p className="text-white">{selectedUserDetail.joinDate}</p>
+              </div>
+              <div>
+                <span className="text-[rgba(238,238,238,0.6)] text-[12px]">
+                  Trạng thái:
+                </span>
+                <p
+                  className={
+                    selectedUserDetail.is_active
+                      ? "text-[rgb(34,197,94)]"
+                      : "text-[rgb(220,38,38)]"
+                  }
+                >
+                  {selectedUserDetail.is_active ? "Hoạt động" : "Đã khóa"}
+                </p>
+              </div>
+            </div>
+            <h5 className="text-[rgb(251,191,36)] font-bold text-[14px] mb-2">
+              Lịch sử đơn hàng ({selectedUserOrders.length})
+            </h5>
+            {selectedUserOrders.length === 0 ? (
+              <p className="text-[rgba(238,238,238,0.5)] italic text-[13px]">
+                Chưa có đơn hàng nào.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="border-b border-[rgb(75,85,99)]">
+                      <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
+                        ID
+                      </th>
+                      <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
+                        Sản phẩm
+                      </th>
+                      <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
+                        Giá
+                      </th>
+                      <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
+                        Ngày
+                      </th>
+                      <th className="text-left py-2 text-[rgba(238,238,238,0.6)]">
+                        Trạng thái
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedUserOrders.map((o) => (
+                      <tr
+                        key={o.id}
+                        className="border-b border-[rgb(55,65,81)]"
+                      >
+                        <td className="py-2 text-white">#{o.id}</td>
+                        <td className="py-2 text-[rgb(251,191,36)]">
+                          {o.product}
+                        </td>
+                        <td className="py-2 text-white">
+                          {o.amount.toLocaleString("vi-VN")}đ
+                        </td>
+                        <td className="py-2 text-white">{o.date}</td>
+                        <td className="py-2">
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${o.status === "completed" ? "bg-[rgba(34,197,94,0.2)] text-[rgb(34,197,94)]" : o.status === "pending" ? "bg-[rgba(251,191,36,0.2)] text-[rgb(251,191,36)]" : "bg-[rgba(220,38,38,0.2)] text-[rgb(220,38,38)]"}`}
+                          >
+                            {o.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
