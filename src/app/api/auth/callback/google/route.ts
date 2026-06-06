@@ -31,7 +31,9 @@ interface UserRow extends RowDataPacket {
 function getOriginFromRequest(request: NextRequest): string {
   const forwardedHost = request.headers.get("x-forwarded-host");
   const host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
-  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol?.replace(":", "") || "https");
+  // Bắt buộc sử dụng https trên môi trường thực tế để tránh lỗi proxy/Cloudflare Flexible SSL
+  const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
+  const proto = isLocalhost ? "http" : "https";
   return `${proto}://${host}`;
 }
 
