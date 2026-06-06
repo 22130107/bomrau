@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { revalidatePath } from "next/cache";
-import { RowDataPacket } from "mysql2";
+import { RowDataPacket, ResultSetHeader } from "mysql2";
 
 export interface DistributorFormData {
   name: string;
@@ -15,6 +15,20 @@ export interface DistributorFormData {
   contact_info?: string;
   username?: string;
   password?: string;
+}
+
+export interface DistributorRevenueDetail {
+  monthlyRevenue: { month: string; total: number }[];
+  dailyRevenue: { date: string; total: number }[];
+  totalRevenue: number;
+  totalOrders: number;
+  recentOrders: {
+    id: number;
+    product: string;
+    buyer: string;
+    amount: number;
+    date: string;
+  }[];
 }
 
 export async function createDistributorAction(data: DistributorFormData) {
@@ -152,6 +166,74 @@ export async function toggleDistributorStatusAction(id: number) {
     return { success: true, newStatus: !!newStatus };
   } catch (error: any) {
     console.error("Toggle distributor status error:", error);
+    return { error: "Lỗi hệ thống: " + (error.message || "Unknown error") };
+  }
+}
+
+export async function getDistributorRevenueDetailAction(distributorId: number) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") {
+      return { error: "Không có quyền truy cập." };
+    }
+
+    const [dailyRev] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE_FORMAT(o.created_at, '%Y-%m-%d') as date, SUM(o.amount) as total
+      FROM orders o
+      WHERE o.distributor_id = ? AND o.status = 'completed'
+        AND o.created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m-%d')
+      ORDER BY date ASC`,
+      [distributorId]
+    );
+
+    const [monthlyRev] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE_FORMAT(o.created_at, '%Y-%m') as month, SUM(o.amount) as total
+      FROM orders o
+      WHERE o.distributor_id = ? AND o.status = 'completed'
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
+      ORDER BY month ASC
+      LIMIT 12`,
+      [distributorId]
+    );
+
+    const [totalRows] = await pool.query<RowDataPacket[]>(
+      `SELECT COALESCE(SUM(o.amount), 0) as total, COUNT(*) as count
+      FROM orders o
+      WHERE o.distributor_id = ? AND o.status = 'completed'`,
+      [distributorId]
+    );
+
+    const [recentOrders] = await pool.query<RowDataPacket[]>(
+      `SELECT o.id, COALESCE(p.title, 'Sản phẩm đã xoá') as product,
+              u.username as buyer, o.amount, DATE_FORMAT(o.created_at, '%d/%m/%Y %H:%i') as date
+      FROM orders o
+      LEFT JOIN products p ON o.product_id = p.id
+      JOIN users u ON o.user_id = u.id
+      WHERE o.distributor_id = ? AND o.status = 'completed'
+      ORDER BY o.created_at DESC
+      LIMIT 20`,
+      [distributorId]
+    );
+
+    return {
+      success: true,
+      data: {
+        monthlyRevenue: monthlyRev.map(r => ({ month: r.month, total: Number(r.total) })),
+        dailyRevenue: dailyRev.map(r => ({ date: r.date, total: Number(r.total) })),
+        totalRevenue: Number(totalRows[0].total) || 0,
+        totalOrders: Number(totalRows[0].count) || 0,
+        recentOrders: recentOrders.map(o => ({
+          id: o.id,
+          product: o.product,
+          buyer: o.buyer,
+          amount: Number(o.amount),
+          date: o.date,
+        })),
+      },
+    };
+  } catch (error: any) {
+    console.error("Get distributor revenue detail error:", error);
     return { error: "Lỗi hệ thống: " + (error.message || "Unknown error") };
   }
 }
