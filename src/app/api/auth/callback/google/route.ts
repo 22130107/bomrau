@@ -29,7 +29,11 @@ interface UserRow extends RowDataPacket {
  * để hỗ trợ nhiều tên miền (multi-domain).
  */
 function getOriginFromRequest(request: NextRequest): string {
-  const forwardedHost = request.headers.get("x-forwarded-host");
+  let forwardedHost = request.headers.get("x-forwarded-host");
+  // Nếu proxy cấu hình sai, x-forwarded-host có thể bị gán thành "http" hoặc "https"
+  if (forwardedHost === "http" || forwardedHost === "https") {
+    forwardedHost = null;
+  }
   const host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
   // Bắt buộc sử dụng https trên môi trường thực tế để tránh lỗi proxy/Cloudflare Flexible SSL
   const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
