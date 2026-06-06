@@ -73,7 +73,22 @@ export async function buyAccountAction(productId: number) {
 
       // 6.5. Xác định NPP và tên miền mua hàng
       const headersList = await headers();
-      const host = headersList.get("host") || "";
+      let host = headersList.get("host") || "";
+      
+      // Thử lấy domain thực tế từ referer để tránh lỗi proxy Nginx
+      const referer = headersList.get("referer");
+      if (referer) {
+        try {
+          const refererUrl = new URL(referer);
+          const refererHost = refererUrl.host;
+          if (refererHost && (refererHost.includes(".") || refererHost.includes("localhost") || refererHost.includes("127.0.0.1"))) {
+            host = refererHost;
+          }
+        } catch (e) {
+          // Bỏ qua
+        }
+      }
+
       let distributorId: number | null = null;
       if (host) {
         const domainName = host.split(":")[0];
