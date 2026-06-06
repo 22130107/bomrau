@@ -19,6 +19,16 @@ export interface BuyerInfo {
   lastDate: string;
 }
 
+export interface DailyRevenue {
+  date: string;
+  total: number;
+}
+
+export interface MonthlyRevenue {
+  month: string;
+  total: number;
+}
+
 export interface NppDataResponse {
   success?: boolean;
   error?: string;
@@ -26,6 +36,8 @@ export interface NppDataResponse {
   domain?: string;
   soldAccounts?: SoldAccount[];
   buyers?: BuyerInfo[];
+  dailyRevenue?: DailyRevenue[];
+  monthlyRevenue?: MonthlyRevenue[];
 }
 
 export async function getNppDataAction(): Promise<NppDataResponse> {
@@ -81,6 +93,28 @@ export async function getNppDataAction(): Promise<NppDataResponse> {
       [distributorId]
     );
 
+    // 4. Doanh thu theo ngày (365 ngày gần nhất)
+    const [dailyRev] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE_FORMAT(o.created_at, '%Y-%m-%d') as date, SUM(o.amount) as total
+      FROM orders o
+      WHERE o.distributor_id = ? AND o.status = 'completed'
+        AND o.created_at >= DATE_SUB(NOW(), INTERVAL 365 DAY)
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m-%d')
+      ORDER BY date ASC`,
+      [distributorId]
+    );
+
+    // 5. Doanh thu theo tháng
+    const [monthlyRev] = await pool.query<RowDataPacket[]>(
+      `SELECT DATE_FORMAT(o.created_at, '%Y-%m') as month, SUM(o.amount) as total
+      FROM orders o
+      WHERE o.distributor_id = ? AND o.status = 'completed'
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
+      ORDER BY month ASC
+      LIMIT 12`,
+      [distributorId]
+    );
+
     const soldAccountsList = orders.map((o) => ({
       id: o.id,
       name: o.name,
@@ -96,12 +130,24 @@ export async function getNppDataAction(): Promise<NppDataResponse> {
       lastDate: b.lastDate,
     }));
 
+    const dailyRevenueList = dailyRev.map((r) => ({
+      date: r.date,
+      total: Number(r.total),
+    }));
+
+    const monthlyRevenueList = monthlyRev.map((r) => ({
+      month: r.month,
+      total: Number(r.total),
+    }));
+
     return {
       success: true,
       distributorName: distributor.name,
       domain: distributor.domain,
       soldAccounts: soldAccountsList,
       buyers: buyersList,
+      dailyRevenue: dailyRevenueList,
+      monthlyRevenue: monthlyRevenueList,
     };
   } catch (error: any) {
     console.error("Get NPP data error:", error);

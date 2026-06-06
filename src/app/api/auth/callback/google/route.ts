@@ -25,13 +25,14 @@ interface UserRow extends RowDataPacket {
 }
 
 /**
- * Lấy origin thật từ request — ưu tiên URL request gốc, fallback về header.
+ * Lấy origin thật từ request — dựa vào header Host / X-Forwarded-Host
+ * để hỗ trợ nhiều tên miền (multi-domain).
  */
-function getOrigin(request: NextRequest): string {
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
-  }
-  return request.nextUrl.origin;
+function getOriginFromRequest(request: NextRequest): string {
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
+  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol?.replace(":", "") || "https");
+  return `${proto}://${host}`;
 }
 
 /**
@@ -40,7 +41,10 @@ function getOrigin(request: NextRequest): string {
  */
 export async function GET(request: NextRequest) {
   try {
-    const origin = getOrigin(request);
+    // Ưu tiên origin đã lưu từ redirect step, fallback về request header
+    const savedOrigin = request.cookies.get("google_oauth_origin")?.value;
+    const origin = savedOrigin || getOriginFromRequest(request);
+
     const { searchParams } = request.nextUrl;
     const code = searchParams.get("code");
     const state = searchParams.get("state");
@@ -68,6 +72,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=server_config", origin));
     }
 
+    // redirect_uri phải trùng với URL đã gửi khi redirect
     const redirectUri = `${origin}/api/auth/callback/google`;
 
     // Đổi authorization code lấy tokens
@@ -158,13 +163,15 @@ export async function GET(request: NextRequest) {
 
     await createSession(user.id, user.username, user.role, user.display_name || user.username);
 
-    // Xóa state cookie và redirect về trang chủ
+    // Xóa state + origin cookie và redirect về trang chủ
     const response = NextResponse.redirect(new URL("/", origin));
     response.cookies.delete("google_oauth_state");
+    response.cookies.delete("google_oauth_origin");
     return response;
   } catch (err) {
     console.error("Google OAuth callback error:", err);
-    const origin = getOrigin(request);
+    const savedOrigin = request.cookies.get("google_oauth_origin")?.value;
+    const origin = savedOrigin || getOriginFromRequest(request);
     return NextResponse.redirect(new URL("/login?error=server_error", origin));
   }
 }

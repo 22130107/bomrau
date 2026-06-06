@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 /**
- * Lấy origin thật từ request — ưu tiên URL request gốc, fallback về header.
+ * Lấy origin thật từ request — dựa vào header Host / X-Forwarded-Host
+ * để hỗ trợ nhiều tên miền (multi-domain).
  */
 function getOrigin(request: NextRequest): string {
-  if (process.env.NEXT_PUBLIC_BASE_URL) {
-    return process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, "");
-  }
-  return request.nextUrl.origin;
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost || request.headers.get("host") || request.nextUrl.host;
+  const proto = request.headers.get("x-forwarded-proto") || (request.nextUrl.protocol?.replace(":", "") || "https");
+  return `${proto}://${host}`;
 }
 
 /**
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing GOOGLE_CLIENT_ID" }, { status: 500 });
   }
 
-  // Xây dựng callback URL từ origin thật
+  // Xây dựng callback URL từ origin thật (dựa vào domain hiện tại)
   const origin = getOrigin(request);
   const redirectUri = `${origin}/api/auth/callback/google`;
 
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
-  // Lưu state vào cookie để verify khi callback
+  // Lưu state + origin vào cookie để verify khi callback
   const response = NextResponse.redirect(authUrl);
   response.cookies.set("google_oauth_state", state, {
     httpOnly: true,
@@ -48,6 +49,14 @@ export async function GET(request: NextRequest) {
     sameSite: "lax",
     path: "/",
     maxAge: 600, // 10 phút
+  });
+  // Lưu origin để callback biết redirect_uri & redirect về đúng domain
+  response.cookies.set("google_oauth_origin", origin, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
   });
 
   return response;
