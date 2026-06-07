@@ -23,37 +23,16 @@ import {
   deleteAccountAction,
   AccountFormData,
 } from "@/app/actions/account";
-// uploadImageAction kept for fallback reference (direct client upload is preferred)
-// import { uploadImageAction } from "@/app/actions/cloudinary";
-
-// Upload thẳng lên Cloudinary từ client để tránh giới hạn 1MB của Server Action
-async function uploadToCloudinary(file: File): Promise<string> {
-  // 1. Lấy signed params từ server
-  const signRes = await fetch("/api/cloudinary-sign", { method: "POST" });
-  if (!signRes.ok) {
-    const { error } = await signRes.json();
-    throw new Error(error || "Không lấy được signature");
-  }
-  const { signature, timestamp, folder, api_key, cloud_name } =
-    await signRes.json();
-
-  // 2. Upload thẳng lên Cloudinary
+async function uploadToLocal(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("api_key", api_key);
-  formData.append("timestamp", String(timestamp));
-  formData.append("signature", signature);
-  formData.append("folder", folder);
 
-  const uploadRes = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
-    { method: "POST", body: formData },
-  );
-  const uploadData = await uploadRes.json();
-  if (!uploadRes.ok || uploadData.error) {
-    throw new Error(uploadData.error?.message || "Upload thất bại");
+  const res = await fetch("/api/upload", { method: "POST", body: formData });
+  const data = await res.json();
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Upload thất bại");
   }
-  return uploadData.secure_url as string;
+  return data.url as string;
 }
 import {
   createNotificationAction,
@@ -521,7 +500,7 @@ export function AdminContent({
 
     setIsUploadingNotification(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToLocal(file);
       setNotificationForm((prev) => ({ ...prev, image_url: url }));
     } catch (err: any) {
       alert("Có lỗi xảy ra khi tải ảnh lên: " + err.message);
@@ -538,7 +517,7 @@ export function AdminContent({
 
     setIsUploadingProduct(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToLocal(file);
       setProductForm((prev) => ({ ...prev, image_url: url }));
     } catch (err: any) {
       alert("Có lỗi xảy ra khi tải ảnh lên: " + err.message);
@@ -555,7 +534,7 @@ export function AdminContent({
 
     setIsUploadingCategory(true);
     try {
-      const url = await uploadToCloudinary(file);
+      const url = await uploadToLocal(file);
       setCategoryForm((prev) => ({ ...prev, image_url: url }));
     } catch (err: any) {
       alert("Có lỗi xảy ra khi tải ảnh lên: " + err.message);
