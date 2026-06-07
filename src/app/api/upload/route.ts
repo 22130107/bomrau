@@ -20,9 +20,8 @@ export async function POST(request: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const ext = file.name.match(/\.([^.]+)$/)?.[1]?.toLowerCase() || "jpg";
     const filename = `${randomUUID()}.webp`;
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const uploadDir = path.join(process.cwd(), "uploads");
     const filePath = path.join(uploadDir, filename);
 
     await mkdir(uploadDir, { recursive: true });
@@ -41,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      url: `/uploads/${filename}`,
+      url: `/api/images/${filename}`,
     });
   } catch (error: any) {
     console.error("Upload error:", error);
