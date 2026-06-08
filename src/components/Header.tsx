@@ -22,7 +22,7 @@ export async function Header() {
             <Link href="/" className="block">
               <Image
                 alt="BomRauTFT Logo"
-                src="https://storage.googleapis.com/download/storage/v1/b/prd-storytodesign.appspot.com/o/h2d-ext-asset%2F80db2b3de8cb58d0c798f786a4d8fa265af5886e.png?generation=1779094517541297&alt=media"
+                src="/logo.jpg"
                 width={100}
                 height={60}
                 className="block w-full"
