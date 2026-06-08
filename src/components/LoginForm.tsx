@@ -38,6 +38,13 @@ export function LoginForm() {
     }
   }, []);
 
+  // Login/Register thành công → redirect ở client (cookie đã lưu xong)
+  useEffect(() => {
+    if (loginState?.success || registerState?.success) {
+      window.location.href = "/";
+    }
+  }, [loginState, registerState]);
+
   // Xử lý error từ OAuth callback redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

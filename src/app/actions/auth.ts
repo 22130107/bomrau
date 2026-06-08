@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import pool from "@/lib/db";
 import { createSession, deleteSession, getSession } from "@/lib/session";
 import { checkRateLimit, resetRateLimit } from "@/lib/rate-limit";
+import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 
 interface User extends RowDataPacket {
@@ -21,7 +22,7 @@ interface User extends RowDataPacket {
 
 export type AuthState = {
   error?: string;
-  success?: string;
+  success?: boolean;
 } | null;
 
 // ─── Lấy IP client ───────────────────────────────────────────────────────────
@@ -92,7 +93,8 @@ export async function loginAction(
     return { error: "Lỗi kết nối server. Vui lòng thử lại sau." };
   }
 
-  redirect("/");
+  revalidatePath("/");
+  return { success: true };
 }
 
 // ─── ĐĂNG KÝ ─────────────────────────────────────────────────────────────────
@@ -153,7 +155,8 @@ export async function registerAction(
     return { error: "Đăng ký không thành công. Vui lòng thử lại." };
   }
 
-  redirect("/");
+  revalidatePath("/");
+  return { success: true };
 }
 
 // ─── ĐĂNG XUẤT ───────────────────────────────────────────────────────────────
