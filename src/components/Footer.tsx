@@ -5,8 +5,8 @@ import { headers } from "next/headers";
 const OLD_LOGO = "https://storage.googleapis.com/download/storage/v1/b/prd-storytodesign.appspot.com/o/h2d-ext-asset%2F80db2b3de8cb58d0c798f786a4d8fa265af5886e.png?generation=1779094517541297&alt=media";
 
 export async function Footer() {
-  const host = (await headers()).get("host") || "";
-  const isHungnho = host === "hungnho.com" || host === "www.hungnho.com";
+  const host = ((await headers()).get("host") || "").toLowerCase();
+  const isHungnho = host.includes("hungnho.com");
   const logoSrc = isHungnho ? "/logo.jpg" : OLD_LOGO;
 
   return (

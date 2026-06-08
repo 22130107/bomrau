@@ -17,8 +17,8 @@ export async function Header() {
   // Username luôn dẫn về profile — dashboard có link riêng trong nav
   const dashboardHref = role === "admin" ? "/admin" : role === "npp" ? "/npp" : null;
 
-  const host = (await headers()).get("host") || "";
-  const isHungnho = host === "hungnho.com" || host === "www.hungnho.com";
+  const host = ((await headers()).get("host") || "").toLowerCase();
+  const isHungnho = host.includes("hungnho.com");
   const logoSrc = isHungnho ? "/logo.jpg" : OLD_LOGO;
 
   return (
