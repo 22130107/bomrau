@@ -1,13 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 
-export function Footer() {
+const OLD_LOGO = "https://storage.googleapis.com/download/storage/v1/b/prd-storytodesign.appspot.com/o/h2d-ext-asset%2F80db2b3de8cb58d0c798f786a4d8fa265af5886e.png?generation=1779094517541297&alt=media";
+
+export async function Footer() {
+  const host = (await headers()).get("host") || "";
+  const isHungnho = host === "hungnho.com" || host === "www.hungnho.com";
+  const logoSrc = isHungnho ? "/logo.jpg" : OLD_LOGO;
+
   return (
     <footer className="bg-[rgba(15,23,42,0.6)] pt-10 md:pt-20">
       <div className="mx-auto w-full max-w-[1200px] px-[14px]">
         <div className="mx-auto relative w-[180px] md:w-[260px] mb-[24px]">
           <Link href="/" className="block">
-            <Image alt="BomRauTFT Logo" src="/logo.jpg" width={260} height={80} className="block w-full" loading="lazy" unoptimized />
+            <Image alt="BomRauTFT Logo" src={logoSrc} width={260} height={80} className="block w-full" loading="lazy" unoptimized />
           </Link>
         </div>
         <p className="font-medium text-center text-[14px] md:text-[16px]">BomRauTFT là Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC.</p>

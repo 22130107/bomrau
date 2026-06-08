@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getSession } from "@/lib/session";
 import { HeaderClient } from "./HeaderClient";
+
+const OLD_LOGO = "https://storage.googleapis.com/download/storage/v1/b/prd-storytodesign.appspot.com/o/h2d-ext-asset%2F80db2b3de8cb58d0c798f786a4d8fa265af5886e.png?generation=1779094517541297&alt=media";
 
 export async function Header() {
   const session = await getSession();
@@ -14,6 +17,10 @@ export async function Header() {
   // Username luôn dẫn về profile — dashboard có link riêng trong nav
   const dashboardHref = role === "admin" ? "/admin" : role === "npp" ? "/npp" : null;
 
+  const host = (await headers()).get("host") || "";
+  const isHungnho = host === "hungnho.com" || host === "www.hungnho.com";
+  const logoSrc = isHungnho ? "/logo.jpg" : OLD_LOGO;
+
   return (
     <header className="border-b fixed w-full left-0 top-0 bg-[rgb(15,23,42)] z-[2506] border-b-[rgba(254,226,226,0.5)]">
       <div className="mx-auto w-full max-w-[1200px] px-[14px]">
@@ -22,7 +29,7 @@ export async function Header() {
             <Link href="/" className="block">
               <Image
                 alt="BomRauTFT Logo"
-                src="/logo.jpg"
+                src={logoSrc}
                 width={100}
                 height={60}
                 className="block w-full"
