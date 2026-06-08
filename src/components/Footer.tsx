@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { LogoSwitcher } from "./LogoSwitcher";
+import { useSiteInfo } from "./SiteInfo";
 
 export function Footer() {
+  const info = useSiteInfo();
+
   return (
     <footer className="bg-[rgba(15,23,42,0.6)] pt-10 md:pt-20">
       <div className="mx-auto w-full max-w-[1200px] px-[14px]">
@@ -10,7 +15,7 @@ export function Footer() {
             <LogoSwitcher width={260} height={80} className="block w-full" loading="lazy" />
           </Link>
         </div>
-        <p className="font-medium text-center text-[14px] md:text-[16px]">BomRauTFT là Shop TFT uy tín, giá rẻ, đa dạng, đầy đủ Mobile và PC.</p>
+        <p className="font-medium text-center text-[14px] md:text-[16px]">{info.tagline}</p>
         <div className="mt-[16px]">
           <ul className="items-center flex justify-center gap-[12px]">
             <li className="list-none">
@@ -30,7 +35,7 @@ export function Footer() {
           </ul>
         </div>
         <div className="border-t mt-[32px] border-[rgb(238,238,238)] pt-6 pb-6">
-          <p className="font-medium text-center text-[12px] md:text-[16px]">© 2026 - Bản quyền thuộc về BomRauTFT</p>
+          <p className="font-medium text-center text-[12px] md:text-[16px]">{info.copyright}</p>
         </div>
       </div>
     </footer>
