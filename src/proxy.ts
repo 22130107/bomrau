@@ -14,6 +14,22 @@ const authRoutes = ["/login"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // HTTP→HTTPS redirect (trên production, loại trừ localhost)
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const isHttp = forwardedProto === "http" || (!forwardedProto && request.nextUrl.protocol === "http:");
+  if (isHttp) {
+    const host = request.headers.get("host") || request.nextUrl.host;
+    if (!host.includes("localhost") && !host.includes("127.0.0.1")) {
+      const httpsUrl = `https://${host}${pathname}${request.nextUrl.search}`;
+      return NextResponse.redirect(httpsUrl, 301);
+    }
+  }
+
+  // API routes: chỉ cần HTTP→HTTPS redirect, không xử lý session
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   const sessionCookie = request.cookies.get("session")?.value;
   const session = await decrypt(sessionCookie);
   const now = new Date();
@@ -69,6 +85,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|icon.png).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon.png).*)",
   ],
 };
