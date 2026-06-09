@@ -13,7 +13,8 @@ function getOrigin(request: NextRequest): string {
       const refererUrl = new URL(referer);
       const host = refererUrl.host;
       if (host && (host.includes(".") || host.includes("localhost") || host.includes("127.0.0.1"))) {
-        const proto = refererUrl.protocol.replace(":", "");
+        const isLocalhost = host.includes("localhost") || host.includes("127.0.0.1");
+        const proto = isLocalhost ? "http" : "https";
         return `${proto}://${host}`;
       }
     } catch (e) {
