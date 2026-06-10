@@ -183,3 +183,29 @@ export async function getBalanceAction(): Promise<{ balance?: number; error?: st
   }
 }
 
+export async function getLatestDepositAction(): Promise<{ productId?: number | null; error?: string }> {
+  try {
+    const session = await getSession();
+    if (!session) return { error: "Not logged in" };
+
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT description FROM transactions
+       WHERE user_id = ? AND type = 'deposit'
+       ORDER BY id DESC LIMIT 1`,
+      [session.userId]
+    );
+
+    if (rows.length === 0) return { productId: null };
+
+    const description: string = rows[0].description || "";
+    // Parse productId từ description: "... (SP: 123)"
+    const match = description.match(/\(SP:\s*(\d+)\)/);
+    const productId = match ? parseInt(match[1], 10) : null;
+
+    return { productId };
+  } catch (err) {
+    console.error("Get latest deposit error:", err);
+    return { error: "System error" };
+  }
+}
+

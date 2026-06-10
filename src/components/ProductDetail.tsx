@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { buyAccountAction } from "@/app/actions/purchase";
-import { getBalanceAction } from "@/app/actions/auth";
+import { getBalanceAction, getLatestDepositAction } from "@/app/actions/auth";
 import { CldImage, cloudinaryUrl } from "@/lib/cloudinary-url";
 
 interface ProductDetailProps {
@@ -73,19 +73,33 @@ export function ProductDetail({
     }
   }, [productId]);
 
-  // Polling for balance update when QR modal is shown
+  // Polling for auto-purchase when QR modal is shown
   useEffect(() => {
     if (modalMode !== "qr" || !currentUser) return;
 
     let isSubscribed = true;
     const initialBalance = currentUser.balance;
 
-    const checkBalance = async () => {
+    const checkPurchase = async () => {
       try {
-        const res = await getBalanceAction();
         if (!isSubscribed) return;
 
-        if (res.balance !== undefined && res.balance > initialBalance) {
+        // 1. Kiểm tra balance tăng
+        const balRes = await getBalanceAction();
+        if (!isSubscribed) return;
+
+        if (balRes.balance !== undefined && balRes.balance > initialBalance) {
+          // 2. Kiểm tra deposit gần nhất có đúng productId của trang này không
+          const depositRes = await getLatestDepositAction();
+          if (!isSubscribed) return;
+
+          // Nếu có productId trong deposit và KHÔNG khớp với productId của trang này → bỏ qua
+          // (deposit dành cho tab khác, tránh mua nhầm)
+          if (depositRes.productId !== null && depositRes.productId !== productId) {
+            return;
+          }
+
+          // 3. ProductId khớp (hoặc deposit không có productId — format cũ) → auto-buy
           const buyResult = await handleBuy();
           if (buyResult && buyResult.error) {
             setBuyError(`Lỗi tự động mua tài khoản: ${buyResult.error}. Vui lòng thử lại thủ công.`);
@@ -93,18 +107,17 @@ export function ProductDetail({
           }
         }
       } catch (err) {
-        console.error("Error checking balance:", err);
+        console.error("Error checking purchase:", err);
       }
     };
 
-    // Check every 3 seconds
-    const interval = setInterval(checkBalance, 3000);
+    const interval = setInterval(checkPurchase, 3000);
 
     return () => {
       isSubscribed = false;
       clearInterval(interval);
     };
-  }, [modalMode, currentUser, handleBuy]);
+  }, [modalMode, currentUser, handleBuy, productId]);
 
   const copyToClipboard = (text: string, type: "zalo" | "user" | "pass" | "stk" | "amount" | "content") => {
     navigator.clipboard.writeText(text);
@@ -476,7 +489,7 @@ export function ProductDetail({
 
                   <div className="bg-white rounded-xl p-2.5 mb-3 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
                     <img
-                      src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${price - currentUser.balance}&addInfo=BOMRAU%20NAP%20${currentUser.id}`}
+                      src={`https://img.vietqr.io/image/${bankName}-${bankAccount}-compact.png?amount=${price - currentUser.balance}&addInfo=BOMRAU%20NAP%20${currentUser.id}_P${productId}`}
                       alt="VietQR"
                       className="w-[180px] h-[180px] object-contain"
                     />
@@ -517,9 +530,9 @@ export function ProductDetail({
                     <div className="flex justify-between py-1.5">
                       <span className="text-[rgba(238,238,238,0.7)] text-[12px] font-sans">Nội dung CK bắt buộc:</span>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-white font-extrabold bg-[rgba(251,191,36,0.15)] px-1.5 py-0.5 rounded text-[14px]">BOMRAU NAP {currentUser.id}</span>
+                        <span className="text-white font-extrabold bg-[rgba(251,191,36,0.15)] px-1.5 py-0.5 rounded text-[14px]">BOMRAU NAP {currentUser.id}_P{productId}</span>
                         <button 
-                          onClick={() => copyToClipboard(`BOMRAU NAP ${currentUser.id}`, "content")}
+                          onClick={() => copyToClipboard(`BOMRAU NAP ${currentUser.id}_P${productId}`, "content")}
                           className="text-[rgb(251,191,36)] text-[11px] font-sans cursor-pointer hover:underline"
                         >
                           {copiedBankInfo.content ? "Đã chép" : "Copy"}
@@ -530,7 +543,7 @@ export function ProductDetail({
 
                   <div className="bg-[rgba(34,197,94,0.05)] border border-[rgba(34,197,94,0.2)] p-2.5 rounded-lg mt-3 text-left w-full">
                     <p className="text-[rgb(74,222,128)] text-[11px] leading-relaxed font-sans">
-                      <strong>Lưu ý quan trọng:</strong> Bạn phải điền chính xác nội dung chuyển khoản <strong>BOMRAU NAP {currentUser.id}</strong> để hệ thống tự động nhận dạng giao dịch và cộng tiền sau 1 phút. Khi được cộng tiền, bạn chỉ cần bấm "Thanh toán bằng số dư" để lấy tài khoản ngay!
+                      <strong>Lưu ý quan trọng:</strong> Bạn phải điền chính xác nội dung chuyển khoản <strong>BOMRAU NAP {currentUser.id}_P{productId}</strong> để hệ thống tự động nhận dạng giao dịch và mua tài khoản ngay!
                     </p>
                   </div>
 

@@ -45,24 +45,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Transfer content is empty" }, { status: 400 });
     }
 
-    // 3. Phân tích nội dung chuyển khoản để lấy userId
-    // Chấp nhận: "BOMRAU NAP <userId>", "BOMRAUNAP<userId>", "bomrau nap <userId>"
+    // 3. Phân tích nội dung chuyển khoản để lấy userId và (tuỳ chọn) productId
+    // Format mới: "BOMRAU NAP <userId>_P<productId>" — nạp tiền cho 1 sản phẩm cụ thể
+    // Format cũ: "BOMRAU NAP <userId>" — nạp tiền thông thường
     const upperContent = content.toUpperCase();
-    const match = upperContent.match(/BOMRAU\s*NAP\s*(\d+)/) || upperContent.match(/BOMRAUNAP(\d+)/);
+    const matchNew = upperContent.match(/BOMRAU\s*NAP\s*(\d+)_P(\d+)/);
+    const matchLegacy = upperContent.match(/BOMRAU\s*NAP\s*(\d+)/);
 
-    if (!match) {
+    if (!matchNew && !matchLegacy) {
       console.warn(`Unrecognized transfer content: "${content}"`);
       return NextResponse.json({ error: "Invalid transfer content format" }, { status: 400 });
     }
 
-    const userId = parseInt(match[1], 10);
+    const userId = parseInt((matchNew || matchLegacy)![1], 10);
+    const productId = matchNew ? parseInt(matchNew[2], 10) : null;
 
-    // 4. Thực hiện cộng tiền trong DB Transaction
+    // 4. Thực hiện trong DB Transaction
     const connection = await pool.getConnection();
     try {
       await connection.beginTransaction();
 
-      // 4.1. Kiểm tra xem người dùng có tồn tại không
+      // 4.1. Kiểm tra giao dịch trùng lặp (idempotency)
+      const [existingTx] = await connection.query<RowDataPacket[]>(
+        "SELECT id FROM transactions WHERE reference_id = ? LIMIT 1",
+        [id.toString()]
+      );
+      if (existingTx.length > 0) {
+        await connection.rollback();
+        console.log(`Transaction ID ${id} already processed.`);
+        return NextResponse.json({ success: true, message: "Transaction already processed" });
+      }
+
+      // 4.2. Kiểm tra người dùng tồn tại
       const [users] = await connection.query<RowDataPacket[]>(
         "SELECT id, username, balance FROM users WHERE id = ? LIMIT 1",
         [userId]
@@ -74,19 +88,6 @@ export async function POST(request: NextRequest) {
       }
       const user = users[0];
 
-      // 4.2. Kiểm tra giao dịch trùng lặp (idempotency)
-      // Dùng ID giao dịch SePay làm reference_id để kiểm tra trùng
-      const [existingTx] = await connection.query<RowDataPacket[]>(
-        "SELECT id FROM transactions WHERE reference_id = ? LIMIT 1",
-        [id.toString()]
-      );
-
-      if (existingTx.length > 0) {
-        await connection.rollback();
-        console.log(`Transaction ID ${id} already processed.`);
-        return NextResponse.json({ success: true, message: "Transaction already processed" });
-      }
-
       // 4.3. Cộng tiền vào ví user
       await connection.query(
         "UPDATE users SET balance = balance + ? WHERE id = ?",
@@ -94,21 +95,23 @@ export async function POST(request: NextRequest) {
       );
 
       // 4.4. Lưu lịch sử giao dịch nạp tiền
+      // Ghi productId vào description để frontend có thể tra cứu
+      const productSuffix = productId ? ` (SP: ${productId})` : "";
+      const depositDesc = `Nạp tiền tự động qua ngân hàng ${gateway} (Mã GD: ${code || id})${productSuffix}`;
+
       await connection.query(
         `INSERT INTO transactions (user_id, type, amount, method, status, description, reference_id)
          VALUES (?, 'deposit', ?, 'bank_transfer', 'completed', ?, ?)`,
-        [
-          userId,
-          amount,
-          `Nạp tiền tự động qua ngân hàng ${gateway} (Mã GD: ${code || id})`,
-          id.toString()
-        ]
+        [userId, amount, depositDesc, id.toString()]
       );
 
       await connection.commit();
-      console.log(`Successfully credited ${amount} VND to user ${user.username} (ID: ${userId})`);
+      console.log(`Successfully credited ${amount} VND to user ${user.username} (ID: ${userId})${productSuffix}`);
 
-      return NextResponse.json({ success: true, message: "Balance updated successfully" }, { status: 201 });
+      return NextResponse.json({
+        success: true,
+        message: "Balance updated successfully",
+      }, { status: 201 });
     } catch (dbError) {
       await connection.rollback();
       throw dbError;
