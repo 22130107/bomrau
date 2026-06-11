@@ -80,7 +80,7 @@ export default async function AdminPage() {
   const [spinCostRows] = await pool.query<RowDataPacket[]>(
     "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
   );
-  const initialSpinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 10000;
+  const initialSpinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 0;
 
   // 2. Fetch Products
   const [productRows] = await pool.query<RowDataPacket[]>(`

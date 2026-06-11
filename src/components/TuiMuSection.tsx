@@ -91,7 +91,7 @@ export async function TuiMuSection() {
 
   if (rows.length === 0) return null;
 
-  const globalSpinCost = rows.length > 0 ? Number(rows[0].global_spin_cost) || 10000 : 10000;
+  const globalSpinCost = rows.length > 0 ? Number(rows[0].global_spin_cost) || 0 : 0;
 
   const tierClass = ["tuimu-thuong", "tuimu-vip", "tuimu-sieuvip"];
   const tierBadge = ["THƯỜNG", "VIP", "SIÊU VIP"];

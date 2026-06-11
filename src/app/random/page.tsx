@@ -30,9 +30,9 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
     }
   }
 
-  let spinCost = 10000;
   let categoryName = "Quay Random";
   let spinCategoryId: number | null = null;
+  let spinCost = 0;
 
   if (categorySlug) {
     const [catRows] = await pool.query<RowDataPacket[]>(
@@ -42,15 +42,17 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
     if (catRows.length > 0) {
       spinCategoryId = catRows[0].id;
       categoryName = catRows[0].name;
-      spinCost = catRows[0].spin_price !== null ? Number(catRows[0].spin_price) : spinCost;
+      if (catRows[0].spin_price !== null) {
+        spinCost = Number(catRows[0].spin_price);
+      }
     }
-  }
-
-  if (!categorySlug) {
+  } else {
     const [spinCostRows] = await pool.query<RowDataPacket[]>(
       "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
     );
-    spinCost = spinCostRows.length > 0 ? Number(spinCostRows[0].value) : 10000;
+    if (spinCostRows.length > 0) {
+      spinCost = Number(spinCostRows[0].value);
+    }
   }
 
   let spinProductRows: RowDataPacket[];
@@ -119,7 +121,9 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
               {categoryName}
             </h1>
             <p className="text-[rgba(238,238,238,0.6)] text-[14px] md:text-[16px] mb-6 md:mb-8 self-start pl-4 md:pl-6">
-              {categorySlug ? `Chi phí ${spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.` : `Chi phí ${spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.`}
+              {spinCost > 0
+                ? `Chi phí ${spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.`
+                : "Chưa cài đặt giá quay. Vui lòng liên hệ admin."}
             </p>
             <RandomSpin
               isLoggedIn={!!session}

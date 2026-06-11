@@ -6,14 +6,14 @@ import { revalidatePath } from "next/cache";
 import { RowDataPacket } from "mysql2";
 import { headers } from "next/headers";
 
-async function getSpinCostFromDB(): Promise<number> {
+async function getSpinCostFromDB(): Promise<number | null> {
   try {
     const [rows] = await pool.query<RowDataPacket[]>(
       "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
     );
-    return rows.length > 0 ? Number(rows[0].value) : 10000;
+    return rows.length > 0 ? Number(rows[0].value) : null;
   } catch {
-    return 10000;
+    return null;
   }
 }
 
@@ -47,7 +47,11 @@ export async function spinCategoryAction(categoryId: number) {
         const [settingsRows] = await connection.query<RowDataPacket[]>(
           "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
         );
-        price = settingsRows.length > 0 ? Number(settingsRows[0].value) : 10000;
+        if (settingsRows.length === 0) {
+          await connection.rollback();
+          return { error: "Chưa cài đặt giá quay. Vui lòng liên hệ admin." };
+        }
+        price = Number(settingsRows[0].value);
       }
 
       // 2. Khoa va kiem tra so du user
@@ -192,6 +196,9 @@ export async function spinAction() {
     const userId = session.userId;
 
     const spinCost = await getSpinCostFromDB();
+    if (spinCost === null) {
+      return { error: "Chưa cài đặt giá quay. Vui lòng liên hệ admin." };
+    }
 
     const connection = await pool.getConnection();
     try {

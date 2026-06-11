@@ -27,7 +27,7 @@ interface RandomSpinProps {
   spinCategoryId?: number | null;
 }
 
-export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost = 10000, spinCategoryId }: RandomSpinProps) {
+export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost = 0, spinCategoryId }: RandomSpinProps) {
   const [phase, setPhase] = useState<"idle" | "spinning" | "result" | "error">("idle");
   const [result, setResult] = useState<{
     category: { name: string; slug: string; image_url: string };
@@ -126,7 +126,8 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
     setProgress(100);
   };
 
-  const canSpin = isLoggedIn && displayBalance >= spinCost;
+  const noConfig = spinCost === 0;
+  const canSpin = isLoggedIn && !noConfig && displayBalance >= spinCost;
 
   return (
     <div className="flex flex-col items-center gap-6 md:gap-8 w-full max-w-[480px]">
@@ -169,15 +170,22 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
             <p className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold text-center px-6 leading-relaxed">
               Quay Random may mắn!
             </p>
-            <p className="text-[rgba(238,238,238,0.5)] text-[14px]">
-              Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{spinCost.toLocaleString("vi-VN")}đ</span> / lượt
-            </p>
+            {!noConfig && (
+              <p className="text-[rgba(238,238,238,0.5)] text-[14px]">
+                Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{spinCost.toLocaleString("vi-VN")}đ</span> / lượt
+              </p>
+            )}
             {!isLoggedIn && (
               <Link href="/login" className="text-[rgb(59,130,246)] text-[14px] font-semibold hover:underline">
                 Đăng nhập để quay
               </Link>
             )}
-            {isLoggedIn && !canSpin && (
+            {isLoggedIn && noConfig && (
+              <p className="text-[rgb(220,38,38)] text-[13px]">
+                Chưa cài đặt giá quay. Vui lòng liên hệ admin.
+              </p>
+            )}
+            {isLoggedIn && !canSpin && !noConfig && (
               <div className="flex flex-col items-center gap-2">
                 <p className="text-[rgb(220,38,38)] text-[13px]">
                   Số dư không đủ. Vui lòng nạp thêm tiền.
@@ -288,7 +296,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
         )}
       </div>
 
-      {phase !== "spinning" && phase !== "result" && (
+      {phase !== "spinning" && phase !== "result" && !noConfig && (
         <button
           onClick={handleSpin}
           disabled={!canSpin}

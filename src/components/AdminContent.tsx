@@ -3403,7 +3403,11 @@ export function AdminContent({
                 min={1000}
                 max={1000000}
                 step={1000}
-                className="w-28 px-3 py-1.5 bg-[rgb(31,41,55)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
+                className={`w-28 px-3 py-1.5 rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)] transition-all duration-200 ${
+                  spinCost === 0
+                    ? "bg-[rgb(220,38,38,0.15)] border-[rgb(220,38,38)] shadow-[0_0_0_2px_rgb(220,38,38,0.4)]"
+                    : "bg-[rgb(31,41,55)] border-[rgb(75,85,99)]"
+                }`}
               />
               <span className="text-[rgba(238,238,238,0.5)] text-[13px]">đ</span>
             </div>
@@ -3427,7 +3431,12 @@ export function AdminContent({
               {savingSpinCost ? "Đang lưu..." : "Lưu"}
             </button>
             <span className="text-[rgba(238,238,238,0.4)] text-[11px]">
-              Đang áp dụng: <strong className="text-[rgb(251,191,36)]">{spinCost.toLocaleString("vi-VN")}đ</strong>
+              Đang áp dụng:{" "}
+              {spinCost === 0 ? (
+                <strong className="text-[rgb(220,38,38)]">CHƯA CÀI ĐẶT</strong>
+              ) : (
+                <strong className="text-[rgb(251,191,36)]">{spinCost.toLocaleString("vi-VN")}đ</strong>
+              )}
             </span>
           </div>
           <div className="overflow-x-auto">
@@ -4156,7 +4165,11 @@ function SpinPriceInput({ categoryId, initialPrice, globalCost, isPending, start
         min={1000}
         max={1000000}
         step={1000}
-        className="w-20 px-1.5 py-1 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded text-white text-[11px] outline-none focus:border-[rgb(251,191,36)] text-center"
+        className={`w-20 px-1.5 py-1 bg-[rgb(17,24,39)] rounded text-white text-[11px] outline-none focus:border-[rgb(251,191,36)] text-center transition-all duration-200 ${
+          price === ""
+            ? "border-[rgb(220,38,38)] bg-[rgb(220,38,38,0.15)] shadow-[0_0_0_2px_rgb(220,38,38,0.4)]"
+            : "border-[rgb(75,85,99)]"
+        }`}
       />
       <button
         disabled={isPending || saving}
