@@ -34,16 +34,7 @@ export function NewsSection({ notifications = [] }: NewsSectionProps) {
   }, [items.length]);
 
   if (items.length === 0) {
-    return (
-      <section id="thongbao" className="pt-6 md:pt-10 pb-6 md:pb-10 animate-fade-in-up">
-        <div className="mx-auto w-full max-w-[1200px] px-[14px]">
-          <h2 className="font-bold mb-[16px] md:mb-[32px] border-[rgb(251,191,36)] text-[rgb(251,191,36)] text-[28px] md:text-[36px] leading-[48px] md:leading-[64px] pl-4 md:pl-6 border-l-[4px]">
-            Thông Báo
-          </h2>
-          <p className="text-[rgba(238,238,238,0.5)] italic mt-8">Hiện chưa có thông báo nào.</p>
-        </div>
-      </section>
-    );
+    return null;
   }
 
   const currentItem = items[currentIndex] || items[0];
