@@ -168,12 +168,17 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
           <div className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[rgb(17,24,39)] rounded-2xl border-2 border-dashed border-[rgb(251,191,36)] gap-4">
             <i className="fa-solid fa-dice text-[56px] md:text-[72px] text-[rgb(251,191,36)]" />
             <p className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold text-center px-6 leading-relaxed">
-              Quay Random may mắn!
+              Túi Mù 99K
             </p>
             {!noConfig && (
-              <p className="text-[rgba(238,238,238,0.5)] text-[14px]">
-                Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{spinCost.toLocaleString("vi-VN")}đ</span> / lượt
-              </p>
+              <>
+                <p className="text-[rgba(238,238,238,0.5)] text-[14px]">
+                  Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{spinCost.toLocaleString("vi-VN")}đ</span> / lượt
+                </p>
+                <p className="text-[rgba(238,238,238,0.4)] text-[13px]">
+                  100% nhận được 1 nick ở danh sách sản phẩm ở phía dưới
+                </p>
+              </>
             )}
             {!isLoggedIn && (
               <Link href="/login" className="text-[rgb(59,130,246)] text-[14px] font-semibold hover:underline">
@@ -302,7 +307,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
           disabled={!canSpin}
           className="w-full max-w-[320px] px-8 py-3.5 bg-[rgb(202,138,4)] hover:bg-[rgb(251,191,36)] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-[18px] md:text-[22px] rounded-lg md:rounded-none md:clip-button transition-all duration-200"
         >
-           QUAY RANDOM - {spinCost.toLocaleString("vi-VN")}đ
+          TÚI MÙ - {spinCost.toLocaleString("vi-VN")}đ
         </button>
       )}
 
