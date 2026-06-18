@@ -66,7 +66,14 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
     [spinProductRows] = await pool.query<RowDataPacket[]>(`
       SELECT p.id, p.title, p.image_url, p.price, p.original_price, p.discount_percent,
              c.name as category_name, c.slug as category_slug,
-             (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as available_accounts
+             CASE
+               WHEN p.fake_remaining_count > 0 THEN p.fake_remaining_count
+               ELSE (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available')
+             END as available_accounts,
+             CASE
+               WHEN p.fake_sold_count > 0 THEN p.fake_sold_count
+               ELSE (SELECT COUNT(*) FROM orders WHERE product_id = p.id AND status = 'completed')
+             END as sold_count
       FROM products p
       JOIN categories c ON p.category_id = c.id
       WHERE p.status = 'available'
@@ -77,7 +84,14 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
     [spinProductRows] = await pool.query<RowDataPacket[]>(`
       SELECT p.id, p.title, p.image_url, p.price, p.original_price, p.discount_percent,
              c.name as category_name, c.slug as category_slug,
-             (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as available_accounts
+             CASE
+               WHEN p.fake_remaining_count > 0 THEN p.fake_remaining_count
+               ELSE (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available')
+             END as available_accounts,
+             CASE
+               WHEN p.fake_sold_count > 0 THEN p.fake_sold_count
+               ELSE (SELECT COUNT(*) FROM orders WHERE product_id = p.id AND status = 'completed')
+             END as sold_count
       FROM products p
       JOIN categories c ON p.category_id = c.id
       WHERE p.status = 'available'
@@ -105,6 +119,7 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
       category_name: row.category_name,
       category_slug: row.category_slug,
       available_accounts: Number(row.available_accounts) || 0,
+      sold_count: Number(row.sold_count) || 0,
     }));
 
   return (
@@ -149,6 +164,7 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
                       price={product.price}
                       originalPrice={product.original_price}
                       discount={product.discount_percent}
+                      sold={product.sold_count}
                       remaining={product.available_accounts}
                       href={`/category/${product.category_slug}/detail.html?id=${product.id}`}
                     />

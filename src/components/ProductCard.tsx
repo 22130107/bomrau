@@ -38,12 +38,12 @@ export function ProductCard({ id, name, image, price, originalPrice, discount, s
               </span>
             </div>
             {sold !== undefined && sold > 0 ? (
-              <p className="text-center text-[10px] md:text-[14px] mt-1 md:mt-2 flex flex-col md:flex-row md:justify-center md:items-center gap-0.5 md:gap-0">
-                <span className="block md:inline">Đã bán <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{sold}</span> acc</span>
+              <p className="text-center text-[10px] md:text-[14px] mt-1 leading-tight">
+                Đã bán <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{sold}</span> acc
                 {remaining !== undefined && remaining > 0 && (
                   <>
-                    <span className="hidden md:inline mx-1">|</span>
-                    <span className="block md:inline">Còn <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{remaining}</span> acc</span>
+                    <span className="mx-0.5 md:mx-1">|</span>
+                    Còn <span className="font-bold text-[16px] md:text-[26px] animate-blink-text font-[family-name:var(--font-nunito)]">{remaining}</span> acc
                   </>
                 )}
               </p>

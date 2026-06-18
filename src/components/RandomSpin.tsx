@@ -16,6 +16,7 @@ export interface SpinProduct {
   category_name: string;
   category_slug: string;
   available_accounts: number;
+  sold_count: number;
 }
 
 interface RandomSpinProps {
@@ -175,7 +176,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
                 <p className="text-[rgba(238,238,238,0.5)] text-[14px]">
                   Chi phí: <span className="text-[rgb(251,191,36)] font-bold">{spinCost.toLocaleString("vi-VN")}đ</span> / lượt
                 </p>
-                <p className="text-[rgba(238,238,238,0.4)] text-[13px]">
+                <p className="text-[16px] animate-pulse-gold">
                   100% nhận được 1 nick ở danh sách sản phẩm ở phía dưới
                 </p>
               </>
