@@ -324,6 +324,16 @@ export function AdminContent({
     return map;
   }, [initialAccounts]);
 
+  const soldCountByProduct = useMemo(() => {
+    const map: Record<number, number> = {};
+    for (const a of initialAccounts) {
+      if (a.status === "sold") {
+        map[a.product_id] = (map[a.product_id] || 0) + 1;
+      }
+    }
+    return map;
+  }, [initialAccounts]);
+
   // States cho Kho (thêm account từ sản phẩm)
   const [expandedProductId, setExpandedProductId] = useState<number | null>(null);
   const [productAccountSearch, setProductAccountSearch] = useState("");
@@ -1426,7 +1436,7 @@ export function AdminContent({
                       )}
                     </td>
                     <td className="py-3 text-[rgb(220,38,38)] font-bold">
-                      {p.fake_sold_count}
+                      {soldCountByProduct[p.id] || 0}
                     </td>
                     <td className="py-3 text-[rgb(34,197,94)] font-bold">
                       {availableCountByProduct[p.id] || 0}

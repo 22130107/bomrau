@@ -27,6 +27,8 @@ export default async function SearchPage({
       `SELECT DISTINCT p.id, p.title as name, p.image_url, p.original_price as originalPrice,
               p.price, p.discount_percent as discount,
               p.fake_sold_count as sold, p.fake_remaining_count as remaining,
+              (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'sold') as real_sold,
+              (SELECT COUNT(*) FROM accounts WHERE product_id = p.id AND status = 'available') as real_remaining,
               c.slug as category_slug, c.image_url as category_image
        FROM products p
        LEFT JOIN categories c ON p.category_id = c.id
@@ -70,8 +72,8 @@ export default async function SearchPage({
                       originalPrice={Number(product.originalPrice)}
                       discount={Number(product.discount)}
                       image={product.image_url || product.category_image || ""}
-                      sold={Number(product.sold) || undefined}
-                      remaining={Number(product.remaining) || undefined}
+                      sold={Number(product.sold) || Number(product.real_sold) || undefined}
+                      remaining={Number(product.remaining) || Number(product.real_remaining) || undefined}
                       href={`/category/${product.category_slug}/detail.html?id=${product.id}`}
                     />
                   ))}

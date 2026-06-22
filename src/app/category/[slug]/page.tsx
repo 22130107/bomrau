@@ -57,7 +57,9 @@ export default async function CategoryPage({
   const offset = (currentPage - 1) * ITEMS_PER_PAGE;
   const [products] = await pool.query<RowDataPacket[]>(`
     SELECT id, title as name, image_url, original_price as originalPrice, price, discount_percent as discount,
-           fake_sold_count as sold, fake_remaining_count as remaining
+           fake_sold_count as sold, fake_remaining_count as remaining,
+           (SELECT COUNT(*) FROM accounts WHERE product_id = products.id AND status = 'sold') as real_sold,
+           (SELECT COUNT(*) FROM accounts WHERE product_id = products.id AND status = 'available') as real_remaining
     FROM products 
     WHERE status = 'available' AND (category_id = ? OR JSON_CONTAINS(extra_categories, CAST(? AS JSON))) AND EXISTS (SELECT 1 FROM accounts WHERE product_id = products.id AND status = 'available')
     ORDER BY is_pinned DESC, price ASC
@@ -92,8 +94,8 @@ export default async function CategoryPage({
                       originalPrice={Number(product.originalPrice)}
                       discount={Number(product.discount)}
                       image={product.image_url || category.image_url || ""}
-                      sold={Number(product.sold) || undefined}
-                      remaining={Number(product.remaining) || undefined}
+                      sold={Number(product.sold) || Number(product.real_sold) || undefined}
+                      remaining={Number(product.remaining) || Number(product.real_remaining) || undefined}
                       href={`/category/${slug}/detail.html?id=${product.id}`}
                     />
                   ))}

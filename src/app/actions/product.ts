@@ -89,24 +89,6 @@ export async function updateProductAction(id: number, data: ProductFormData) {
       return { error: "Vui lòng nhập đủ các trường bắt buộc" };
     }
 
-    let fakeSold = data.fake_sold_count || 0;
-    let fakeRemaining = data.fake_remaining_count || 0;
-
-    if (!fakeSold && !fakeRemaining) {
-      const [countRows] = await pool.query<RowDataPacket[]>(
-        "SELECT COUNT(*) as total FROM accounts WHERE product_id = ?",
-        [id]
-      );
-      const [soldRows] = await pool.query<RowDataPacket[]>(
-        "SELECT COUNT(*) as total FROM accounts WHERE product_id = ? AND status = 'sold'",
-        [id]
-      );
-      const totalAccounts = Number(countRows[0].total) || 0;
-      const soldAccounts = Number(soldRows[0].total) || 0;
-      fakeSold = soldAccounts;
-      fakeRemaining = totalAccounts - soldAccounts;
-    }
-
     await pool.query(
       `UPDATE products SET 
         category_id=?, extra_categories=?, title=?, image_url=?, price=?, original_price=?, 
@@ -115,7 +97,7 @@ export async function updateProductAction(id: number, data: ProductFormData) {
       WHERE id=?`,
       [
         data.category_id, JSON.stringify(autoExtraCategories(data.price, data.extra_categories)), data.title, data.image_url || "", data.price, data.original_price || 0,
-        Math.max(0, Math.min(255, data.discount_percent || 0)), fakeSold, fakeRemaining,
+        Math.max(0, Math.min(255, data.discount_percent || 0)), data.fake_sold_count || 0, data.fake_remaining_count || 0,
         data.status || "available", data.is_pinned ? 1 : 0, data.pet_tim || null, data.san_tim || null, data.chuong || null, data.extra_info || null, id
       ]
     );
