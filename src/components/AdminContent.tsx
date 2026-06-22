@@ -8,6 +8,7 @@ import {
   createCategoryAction,
   updateCategoryAction,
   deleteCategoryAction,
+  toggleCategoryActiveAction,
 } from "@/app/actions/category";
 import {
   createProductAction,
@@ -144,6 +145,7 @@ export interface AdminCategory {
   sort_order: number;
   productCount: number;
   soldCount: number;
+  is_active: boolean;
 }
 
 export interface AdminDistributor {
@@ -2446,6 +2448,21 @@ export function AdminContent({
                     <td className="py-3 text-white font-bold">{c.soldCount}</td>
                     <td className="py-3">
                       <div className="flex gap-1">
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              await toggleCategoryActiveAction(c.id);
+                            });
+                          }}
+                          className={`px-2 py-1 text-[11px] rounded disabled:opacity-50 ${
+                            c.is_active
+                              ? "bg-[rgb(234,179,8)] text-black"
+                              : "bg-[rgb(75,85,99)] text-white"
+                          }`}
+                        >
+                          {c.is_active ? "Hiện" : "Ẩn"}
+                        </button>
                         <button
                           disabled={isPending}
                           onClick={() => {

@@ -3,15 +3,16 @@ import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 
 export async function CategorySection() {
-  // Lấy dữ liệu category từ DB kèm theo số lượng acc còn và đã bán
   const [rows] = await pool.query<RowDataPacket[]>(`
     SELECT c.name as title, c.slug, c.description as price, c.image_url as image,
            c.fake_remaining_count as remaining,
            c.fake_sold_count as sold
     FROM categories c
-    WHERE c.is_spin_enabled = 0
+    WHERE c.is_spin_enabled = 0 AND c.is_active = 1
     ORDER BY c.sort_order ASC
   `);
+
+  if (rows.length === 0) return null;
 
   return (
     <section id="danhmuc" className="pt-6 md:pt-10 pb-6 md:pb-10 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
@@ -21,7 +22,7 @@ export async function CategorySection() {
         </h2>
         <ul className="flex flex-wrap mt-[32px] md:mt-[64px] gap-[16px] md:gap-[32px]">
           {rows.map((category, index) => (
-            <CategoryCard 
+            <CategoryCard
               key={index}
               image={category.image}
               alt={category.title}

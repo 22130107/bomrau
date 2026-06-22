@@ -147,7 +147,8 @@ export default async function AdminPage() {
   const [categoryRows] = await pool.query<RowDataPacket[]>(`
     SELECT c.id, c.name, c.slug, c.description, c.image_url, c.sort_order,
            c.fake_remaining_count as productCount,
-           c.fake_sold_count as soldCount
+           c.fake_sold_count as soldCount,
+           c.is_active
     FROM categories c
     ORDER BY c.sort_order
   `);
@@ -161,6 +162,7 @@ export default async function AdminPage() {
     sort_order: Number(row.sort_order) || 0,
     productCount: Number(row.productCount) || 0,
     soldCount: Number(row.soldCount) || 0,
+    is_active: Boolean(row.is_active),
   }));
 
   // 4. Fetch Distributors

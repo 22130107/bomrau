@@ -53,6 +53,25 @@ export async function updateCategoryAction(id: number, data: { name: string; slu
   }
 }
 
+export async function toggleCategoryActiveAction(id: number) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") return { error: "Unauthorized" };
+
+    await pool.query(
+      "UPDATE categories SET is_active = NOT is_active WHERE id = ?",
+      [id]
+    );
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Toggle category active error:", error);
+    return { error: "Lỗi hệ thống" };
+  }
+}
+
 export async function deleteCategoryAction(id: number) {
   try {
     const session = await getSession();
