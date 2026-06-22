@@ -55,9 +55,9 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
           <ul className="flex gap-[8px] md:gap-[12px] justify-center items-center">
 
             <li className="font-medium list-none text-[14px] md:text-[17px]">
-              <Link href="/news" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
-                <i className="fa-solid fa-bell" />
-                <span>Thông Báo</span>
+              <Link href="/profile?tab=topup" className="items-center inline-flex gap-[4px] md:gap-[6px] px-1 md:px-2 py-1 hover:text-[rgb(251,191,36)] transition-colors">
+                <i className="fa-solid fa-wallet" />
+                <span>NẠP TIỀN</span>
               </Link>
             </li>
 

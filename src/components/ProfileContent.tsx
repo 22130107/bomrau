@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { LogoutButton } from "./LogoutButton";
 import { getBalanceAction } from "@/app/actions/auth";
 
@@ -74,6 +74,7 @@ const METHOD_LABELS: Record<string, string> = {
 
 export function ProfileContent({ user }: ProfileContentProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const bankName = process.env.NEXT_PUBLIC_BANK_NAME || "MB";
   const bankAccount = process.env.NEXT_PUBLIC_BANK_ACCOUNT || "0338180818";
   const bankHolder = process.env.NEXT_PUBLIC_BANK_HOLDER || "NGUYEN VAN A";
@@ -90,6 +91,13 @@ export function ProfileContent({ user }: ProfileContentProps) {
   useEffect(() => {
     setBalance(user.balance);
   }, [user.balance]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "topup" || tab === "history" || tab === "deposits") {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (activeTab !== "topup" || !showQR) return;
