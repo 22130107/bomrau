@@ -6,7 +6,7 @@ import { ProductDetail } from "@/components/ProductDetail";
 import pool from "@/lib/db";
 import { RowDataPacket } from "mysql2";
 import { notFound } from "next/navigation";
-import { getSession } from "@/lib/session";
+
 
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams: Promise<{ id?: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -72,23 +72,6 @@ export default async function ProductDetailPage({
   `, [productId]);
   const realRemainingCount = accounts[0].count;
 
-  // Lấy session và thông tin người dùng hiện tại
-  const session = await getSession();
-  let currentUser = null;
-  if (session) {
-    const [userRows] = await pool.query<RowDataPacket[]>(
-      "SELECT id, username, balance FROM users WHERE id = ? LIMIT 1",
-      [session.userId]
-    );
-    if (userRows.length > 0) {
-      currentUser = {
-        id: userRows[0].id,
-        username: userRows[0].username,
-        balance: Number(userRows[0].balance),
-      };
-    }
-  }
-
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -117,8 +100,6 @@ export default async function ProductDetailPage({
         ]} />
         <div className="pt-6 md:pt-10 pb-10">
           <ProductDetail 
-            productId={Number(productId)}
-            currentUser={currentUser}
             name={product.title}
             image={product.image_url || category.image_url}
             price={Number(product.price)}
@@ -128,7 +109,6 @@ export default async function ProductDetailPage({
             sanTim={product.san_tim || undefined}
             chuong={product.chuong || undefined}
             extraInfo={product.extra_info || undefined}
-            isOutOfStock={realRemainingCount === 0}
           />
         </div>
       </main>
