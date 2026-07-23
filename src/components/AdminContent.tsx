@@ -2053,7 +2053,7 @@ export function AdminContent({
           <div className="flex flex-wrap gap-2 mb-4 p-3 bg-[rgb(31,41,55)] rounded-lg border border-[rgb(75,85,99)]">
             <input
               type="text"
-              placeholder="🔍 Tìm tài khoản theo username..."
+              placeholder="🔍 Tìm kiếm theo tên sản phẩm..."
               value={accountSearchTerm}
               onChange={(e) => setAccountSearchTerm(e.target.value)}
               className="flex-1 min-w-[180px] px-3 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)]"
@@ -2109,7 +2109,7 @@ export function AdminContent({
                       if (!prod || prod.category_id !== selectedCategoryForAccount) return false;
                     }
                     if (accountStatusFilter !== "all" && a.status !== accountStatusFilter) return false;
-                    if (accountSearchTerm && !a.login_username.toLowerCase().includes(accountSearchTerm.toLowerCase())) return false;
+                    if (accountSearchTerm && !a.product_title.toLowerCase().includes(accountSearchTerm.toLowerCase())) return false;
                     return true;
                   })
                   .map((a) => (
