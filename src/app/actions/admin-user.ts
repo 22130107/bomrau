@@ -45,6 +45,21 @@ export async function toggleUserLockAction(id: number) {
   }
 }
 
+export async function resetUserBalanceAction(id: number) {
+  try {
+    const session = await getSession();
+    if (!session || session.role !== "admin") return { error: "Unauthorized" };
+
+    await pool.query("UPDATE users SET balance = 0 WHERE id = ?", [id]);
+
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Reset user balance error:", error);
+    return { error: "Lỗi hệ thống: " + (error.message || "Unknown error") };
+  }
+}
+
 export async function getUserDetailAction(id: number) {
   try {
     const session = await getSession();

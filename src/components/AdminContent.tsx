@@ -52,6 +52,7 @@ import {
 import {
   toggleUserLockAction,
   getUserDetailAction,
+  resetUserBalanceAction,
 } from "@/app/actions/admin-user";
 import {
   toggleCategorySpinAction,
@@ -312,6 +313,7 @@ export function AdminContent({
   const [productStatusFilter, setProductStatusFilter] = useState<string>("all");
   const [productAccountFilter, setProductAccountFilter] = useState<string>("all");
   const [selectionMode, setSelectionMode] = useState(false);
+  const [userSearchTerm, setUserSearchTerm] = useState("");
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
 
   const availableCountByProduct = useMemo(() => {
@@ -2923,7 +2925,15 @@ export function AdminContent({
             Người dùng
           </h3>
 
-
+          <div className="mb-4">
+            <input
+              type="text"
+              value={userSearchTerm}
+              onChange={(e) => setUserSearchTerm(e.target.value)}
+              placeholder="🔍 Tìm user theo tên, email hoặc ID..."
+              className="w-full px-4 py-2 bg-[rgb(17,24,39)] border border-[rgb(75,85,99)] rounded-lg text-white text-[13px] outline-none focus:border-[rgb(251,191,36)] transition-colors placeholder:text-[rgba(238,238,238,0.4)]"
+            />
+          </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-[12px] md:text-[14px]">
@@ -2953,7 +2963,15 @@ export function AdminContent({
                 </tr>
               </thead>
               <tbody>
-                {initialUsers.map((u) => (
+                {initialUsers.filter(u => {
+                  if (!userSearchTerm) return true;
+                  const term = userSearchTerm.toLowerCase();
+                  return (
+                    u.username.toLowerCase().includes(term) ||
+                    (u.email && u.email.toLowerCase().includes(term)) ||
+                    u.id.toString().includes(term)
+                  );
+                }).map((u) => (
                   <tr key={u.id} className="border-b border-[rgb(55,65,81)]">
                     <td className="py-3 text-white">#{u.id}</td>
                     <td className="py-3 text-[rgb(251,191,36)] font-semibold">
@@ -2993,7 +3011,6 @@ export function AdminContent({
                         <button
                           disabled={isPending}
                           onClick={() => {
-                            const action = "khóa";
                             if (
                               confirm(
                                 `Bạn có chắc chắn muốn khóa tài khoản "${u.username}"? Người dùng này sẽ không thể đăng nhập.`,
@@ -3008,6 +3025,20 @@ export function AdminContent({
                           className="px-2 py-1 bg-[rgb(220,38,38)] text-white text-[11px] rounded disabled:opacity-50"
                         >
                           Khóa
+                        </button>
+                        <button
+                          disabled={isPending}
+                          onClick={() => {
+                            if (confirm(`Reset số dư của user "${u.username}" (${u.balance.toLocaleString("vi-VN")}đ) về 0?`)) {
+                              startTransition(async () => {
+                                const res = await resetUserBalanceAction(u.id);
+                                if (res.error) alert(res.error);
+                              });
+                            }
+                          }}
+                          className="px-2 py-1 bg-[rgb(251,191,36)] text-black text-[11px] rounded disabled:opacity-50 font-bold"
+                        >
+                          Reset tiền
                         </button>
                       </div>
                     </td>
