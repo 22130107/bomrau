@@ -107,6 +107,11 @@ export function HeaderClient({ isLoggedIn, username, role, dashboardHref }: Head
         <div className="fixed top-[60px] left-0 right-0 md:hidden border-t border-[rgba(254,226,226,0.15)] bg-[rgb(15,23,42)] px-[14px] py-4 animate-fade-in z-[2505]">
           <nav className="flex flex-col gap-3">
 
+            <Link href="/profile?tab=topup" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
+              <i className="fa-solid fa-wallet" />
+              <span>NẠP TIỀN</span>
+            </Link>
+
             <Link href="/news" className="flex items-center gap-2 text-[16px] font-medium text-white hover:text-[rgb(251,191,36)] transition-colors py-2 border-b border-[rgba(255,255,255,0.05)]" onClick={() => setIsOpen(false)}>
               <i className="fa-solid fa-bell" />
               <span>Thông Báo</span>
