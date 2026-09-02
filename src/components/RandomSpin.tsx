@@ -169,7 +169,7 @@ export function RandomSpin({ isLoggedIn, userId, balance, spinProducts, spinCost
           <div className="flex flex-col items-center justify-center w-full aspect-[4/3] bg-[rgb(17,24,39)] rounded-2xl border-2 border-dashed border-[rgb(251,191,36)] gap-4">
             <i className="fa-solid fa-dice text-[56px] md:text-[72px] text-[rgb(251,191,36)]" />
             <p className="text-[rgb(251,191,36)] text-[18px] md:text-[22px] font-bold text-center px-6 leading-relaxed">
-              Túi Mù 99K
+              Túi Mù
             </p>
             {!noConfig && (
               <>

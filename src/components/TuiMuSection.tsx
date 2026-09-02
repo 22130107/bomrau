@@ -78,16 +78,23 @@ const tierStyles = `
 `;
 
 export async function TuiMuSection() {
-  const [rows] = await pool.query<RowDataPacket[]>(`
-    SELECT c.name as title, c.slug, c.description as price, c.image_url as image,
-           c.fake_remaining_count as remaining,
-           c.fake_sold_count as sold,
-           c.spin_price,
-           (SELECT \`value\` FROM settings WHERE \`key\` = 'spin_cost' LIMIT 1) as global_spin_cost
-    FROM categories c
-    WHERE c.is_spin_enabled = 1
-    ORDER BY c.sort_order ASC
-  `);
+  let rows: RowDataPacket[] = [];
+  try {
+    const [result] = await pool.query<RowDataPacket[]>(`
+      SELECT c.name as title, c.slug, c.description as price, c.image_url as image,
+             c.fake_remaining_count as remaining,
+             c.fake_sold_count as sold,
+             c.spin_price,
+             (SELECT \`value\` FROM settings WHERE \`key\` = 'spin_cost' LIMIT 1) as global_spin_cost
+      FROM categories c
+      WHERE c.is_spin_enabled = 1
+      ORDER BY c.sort_order ASC
+    `);
+    rows = result;
+  } catch (error) {
+    console.error("Error loading tuimu categories:", error);
+    return null;
+  }
 
   if (rows.length === 0) return null;
 

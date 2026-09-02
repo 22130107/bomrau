@@ -107,20 +107,40 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
     `);
   }
 
-  const spinProducts: SpinProduct[] = spinProductRows
-    .filter(row => Number(row.available_accounts) > 0)
-    .map(row => ({
-      id: row.id,
-      title: row.title,
-      image_url: row.image_url || "",
-      price: Number(row.price),
-      original_price: Number(row.original_price) || 0,
-      discount_percent: Number(row.discount_percent) || 0,
-      category_name: row.category_name,
-      category_slug: row.category_slug,
-      available_accounts: Number(row.available_accounts) || 0,
-      sold_count: Number(row.sold_count) || 0,
-    }));
+  const staticProducts: SpinProduct[] = [
+    {
+      id: 99999,
+      title: "Shyvana thần long tini",
+      image_url: "/gify.jpg",
+      price: 3799000,
+      original_price: 3799000,
+      discount_percent: 0,
+      category_name: "Túi Mù",
+      category_slug: "random",
+      available_accounts: 0,
+      sold_count: 0,
+    },
+  ];
+
+  const allSpinProducts: SpinProduct[] = [
+    ...staticProducts,
+    ...spinProductRows
+      .filter(row => Number(row.available_accounts) > 0)
+      .map(row => ({
+        id: row.id,
+        title: row.title,
+        image_url: row.image_url || "",
+        price: Number(row.price),
+        original_price: Number(row.original_price) || 0,
+        discount_percent: Number(row.discount_percent) || 0,
+        category_name: row.category_name,
+        category_slug: row.category_slug,
+        available_accounts: Number(row.available_accounts) || 0,
+        sold_count: Number(row.sold_count) || 0,
+      })),
+  ];
+
+  const effectiveSpinCost = spinCost > 0 ? spinCost : 3799000;
 
   return (
     <div className="pt-[70px] md:pt-[90px]">
@@ -136,26 +156,24 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
               {categoryName}
             </h1>
             <p className="text-[rgba(238,238,238,0.6)] text-[14px] md:text-[16px] mb-6 md:mb-8 self-start pl-4 md:pl-6">
-              {spinCost > 0
-                ? `Chi phí ${spinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.`
-                : "Chưa cài đặt giá quay. Vui lòng liên hệ admin."}
+              {`Chi phí ${effectiveSpinCost.toLocaleString("vi-VN")}đ / lượt. Acc nhận được sẽ được thêm vào lịch sử mua hàng của bạn.`}
             </p>
             <RandomSpin
               isLoggedIn={!!session}
               userId={session?.userId ?? null}
               balance={balance}
-              spinProducts={spinProducts}
-              spinCost={spinCost}
+              spinProducts={allSpinProducts}
+              spinCost={effectiveSpinCost}
               spinCategoryId={spinCategoryId}
             />
 
-            {spinProducts.length > 0 && (
+            {allSpinProducts.length > 0 && (
               <div className="w-full mt-10 md:mt-14">
                 <p className="text-[rgba(238,238,238,0.5)] text-[13px] md:text-[14px] mb-4 md:mb-6 font-medium tracking-wide uppercase">
                   Sản phẩm có thể quay
                 </p>
                 <ul className="flex flex-wrap gap-[16px] md:gap-[32px] animate-fade-in-up">
-                  {spinProducts.map((product) => (
+                  {allSpinProducts.map((product) => (
                     <ProductCard
                       key={product.id}
                       id={product.id.toString()}
@@ -164,9 +182,9 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
                       price={product.price}
                       originalPrice={product.original_price}
                       discount={product.discount_percent}
-                      sold={product.sold_count}
-                      remaining={product.available_accounts}
-                      href={`/category/${product.category_slug}/detail.html?id=${product.id}`}
+                      sold={product.id === 99999 ? undefined : product.sold_count}
+                      remaining={product.id === 99999 ? undefined : product.available_accounts}
+                      href={product.id === 99999 ? "/category/random/detail.html?id=99999" : `/category/${product.category_slug}/detail.html?id=${product.id}`}
                     />
                   ))}
                 </ul>
