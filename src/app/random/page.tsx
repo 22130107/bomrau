@@ -46,7 +46,9 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
         spinCost = Number(catRows[0].spin_price);
       }
     }
-  } else {
+  }
+
+  if (spinCost === 0) {
     const [spinCostRows] = await pool.query<RowDataPacket[]>(
       "SELECT `value` FROM settings WHERE `key` = 'spin_cost' LIMIT 1"
     );
@@ -106,41 +108,22 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
       ORDER BY p.is_pinned DESC, p.id DESC
     `);
   }
+  const allSpinProducts: SpinProduct[] = spinProductRows
+    .filter(row => Number(row.available_accounts) > 0)
+    .map(row => ({
+      id: row.id,
+      title: row.title,
+      image_url: row.image_url || "",
+      price: Number(row.price),
+      original_price: Number(row.original_price) || 0,
+      discount_percent: Number(row.discount_percent) || 0,
+      category_name: row.category_name,
+      category_slug: row.category_slug,
+      available_accounts: Number(row.available_accounts) || 0,
+      sold_count: Number(row.sold_count) || 0,
+    }));
 
-  const staticProducts: SpinProduct[] = [
-    {
-      id: 99999,
-      title: "Shyvana thần long tini",
-      image_url: "/gify.jpg",
-      price: 3799000,
-      original_price: 3799000,
-      discount_percent: 0,
-      category_name: "Túi Mù",
-      category_slug: "random",
-      available_accounts: 0,
-      sold_count: 0,
-    },
-  ];
-
-  const allSpinProducts: SpinProduct[] = [
-    ...staticProducts,
-    ...spinProductRows
-      .filter(row => Number(row.available_accounts) > 0)
-      .map(row => ({
-        id: row.id,
-        title: row.title,
-        image_url: row.image_url || "",
-        price: Number(row.price),
-        original_price: Number(row.original_price) || 0,
-        discount_percent: Number(row.discount_percent) || 0,
-        category_name: row.category_name,
-        category_slug: row.category_slug,
-        available_accounts: Number(row.available_accounts) || 0,
-        sold_count: Number(row.sold_count) || 0,
-      })),
-  ];
-
-  const effectiveSpinCost = spinCost > 0 ? spinCost : 3799000;
+  const effectiveSpinCost = spinCost;
 
   return (
     <div className="pt-[70px] md:pt-[90px]">
@@ -182,9 +165,9 @@ export default async function RandomPage(props: { searchParams?: Promise<{ categ
                       price={product.price}
                       originalPrice={product.original_price}
                       discount={product.discount_percent}
-                      sold={product.id === 99999 ? undefined : product.sold_count}
-                      remaining={product.id === 99999 ? undefined : product.available_accounts}
-                      href={product.id === 99999 ? "/category/random/detail.html?id=99999" : `/category/${product.category_slug}/detail.html?id=${product.id}`}
+                      sold={product.sold_count}
+                      remaining={product.available_accounts}
+                      href={`/category/${product.category_slug}/detail.html?id=${product.id}`}
                     />
                   ))}
                 </ul>
